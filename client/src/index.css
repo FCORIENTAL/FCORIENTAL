@@ -28,7 +28,7 @@
   --chart-3: hsl(42, 93%, 56%);
   --chart-4: hsl(147, 79%, 42%);
   --chart-5: hsl(341, 75%, 51%);
-  --sidebar: hsl(202, 100%, 38%);
+  --sidebar: #0679C0;
   --sidebar-foreground: hsl(0, 0%, 100%);
   --sidebar-primary: hsl(158, 64%, 52%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
@@ -72,7 +72,7 @@
   --border: hsl(210, 5%, 15%);
   --input: hsl(208, 28%, 18%);
   --ring: hsl(158, 64%, 52%);
-  --sidebar: hsl(202, 100%, 25%);
+  --sidebar: #0679C0;
   --sidebar-foreground: hsl(0, 0%, 100%);
   --sidebar-primary: hsl(158, 64%, 52%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);

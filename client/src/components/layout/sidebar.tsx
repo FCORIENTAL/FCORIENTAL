@@ -48,7 +48,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <img 
             src={logoImage} 
             alt="FC ORIENTAL Logo" 
-            className="w-8 h-8 rounded-full object-cover"
+            className="w-7 h-7 rounded-full object-cover"
           />
           <span className="font-bold text-lg text-sidebar-foreground">FC ORIENTAL</span>
         </div>

@@ -267,6 +267,7 @@ export default function MatchForm({ onSuccess }: MatchFormProps) {
                   placeholder="경기에 대한 메모나 특이사항을 기록하세요..."
                   rows={3}
                   {...field}
+                  value={field.value || ""}
                 />
               </FormControl>
               <FormMessage />

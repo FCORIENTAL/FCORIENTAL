@@ -8,7 +8,14 @@ export default function Dashboard() {
     queryKey: ["/api/players/stats"],
   });
 
-  const { data: seasonStats, isLoading: isLoadingSeasonStats } = useQuery({
+  const { data: seasonStats, isLoading: isLoadingSeasonStats } = useQuery<{
+    totalMatches: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    totalGoals: number;
+    averageGoals: number;
+  }>({
     queryKey: ["/api/season/2024/stats"],
   });
 

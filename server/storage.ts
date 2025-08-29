@@ -60,7 +60,11 @@ export class MemStorage implements IStorage {
 
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
     const id = randomUUID();
-    const player: Player = { ...insertPlayer, id };
+    const player: Player = { 
+      ...insertPlayer, 
+      id,
+      number: insertPlayer.number ?? null
+    };
     this.players.set(id, player);
     return player;
   }
@@ -91,7 +95,14 @@ export class MemStorage implements IStorage {
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
     const id = randomUUID();
     const { participants, playerGoals, ...matchData } = insertMatch;
-    const match: Match = { ...matchData, id };
+    const match: Match = { 
+      ...matchData, 
+      id,
+      ourScore: matchData.ourScore ?? 0,
+      theirScore: matchData.theirScore ?? 0,
+      notes: matchData.notes ?? null,
+      season: matchData.season ?? "2024"
+    };
     this.matches.set(id, match);
 
     // Add participants
@@ -165,7 +176,11 @@ export class MemStorage implements IStorage {
 
   async addGoal(goal: InsertGoal): Promise<Goal> {
     const id = randomUUID();
-    const newGoal: Goal = { ...goal, id };
+    const newGoal: Goal = { 
+      ...goal, 
+      id,
+      count: goal.count ?? 1
+    };
     this.goals.set(id, newGoal);
     return newGoal;
   }
