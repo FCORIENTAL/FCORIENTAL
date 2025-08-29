@@ -1,4 +1,4 @@
-import { type Player, type InsertPlayer, type Match, type InsertMatch, type MatchParticipant, type InsertMatchParticipant, type Goal, type InsertGoal, type PlayerStats, type MatchWithDetails } from "@shared/schema";
+import { type Player, type InsertPlayer, type Match, type InsertMatch, type MatchParticipant, type InsertMatchParticipant, type Goal, type InsertGoal, type PlayerStats, type MatchWithDetails, type User, type InsertUser } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -35,6 +35,11 @@ export interface IStorage {
     totalGoals: number;
     averageGoals: number;
   }>;
+
+  // User operations
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  verifyUser(username: string, password: string): Promise<User | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -42,12 +47,23 @@ export class MemStorage implements IStorage {
   private matches: Map<string, Match>;
   private matchParticipants: Map<string, MatchParticipant>;
   private goals: Map<string, Goal>;
+  private users: Map<string, User>;
 
   constructor() {
     this.players = new Map();
     this.matches = new Map();
     this.matchParticipants = new Map();
     this.goals = new Map();
+    this.users = new Map();
+    
+    // 기본 관리자 계정 생성
+    const adminId = randomUUID();
+    this.users.set(adminId, {
+      id: adminId,
+      username: "admin",
+      password: "admin123", // 실제 배포시에는 해싱 필요
+      role: "admin"
+    });
   }
 
   async getPlayer(id: string): Promise<Player | undefined> {
@@ -288,6 +304,29 @@ export class MemStorage implements IStorage {
       totalGoals,
       averageGoals,
     };
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = { 
+      ...insertUser, 
+      id,
+      role: insertUser.role ?? "user"
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async verifyUser(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user || user.password !== password) {
+      return null;
+    }
+    return user;
   }
 }
 
