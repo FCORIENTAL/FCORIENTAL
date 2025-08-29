@@ -68,9 +68,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           
           return (
             <Link key={item.href} href={item.href}>
-              <a 
+              <div 
                 data-testid={item.testId}
-                className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${
+                className={`flex items-center px-6 py-3 text-sm font-medium transition-colors cursor-pointer ${
                   isActive 
                     ? 'sidebar-active text-sidebar-foreground' 
                     : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground'
@@ -83,7 +83,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               >
                 <Icon className="w-5 h-5 mr-3" />
                 {item.label}
-              </a>
+              </div>
             </Link>
           );
         })}
