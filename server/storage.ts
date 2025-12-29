@@ -79,6 +79,7 @@ export class MemStorage implements IStorage {
     const player: Player = { 
       ...insertPlayer, 
       id,
+      position: insertPlayer.position ?? null,
       number: insertPlayer.number ?? null
     };
     this.players.set(id, player);
@@ -135,13 +136,14 @@ export class MemStorage implements IStorage {
     // Add goals if provided
     if (playerGoals) {
       for (const playerGoal of playerGoals) {
-        if (playerGoal.goals > 0) {
+        if (playerGoal.goals > 0 || (playerGoal.assists && playerGoal.assists > 0)) {
           const goalId = randomUUID();
           const goal: Goal = {
             id: goalId,
             matchId: id,
             playerId: playerGoal.playerId,
             count: playerGoal.goals,
+            assists: playerGoal.assists ?? 0,
           };
           this.goals.set(goalId, goal);
         }
@@ -195,7 +197,8 @@ export class MemStorage implements IStorage {
     const newGoal: Goal = { 
       ...goal, 
       id,
-      count: goal.count ?? 1
+      count: goal.count ?? 1,
+      assists: goal.assists ?? 0
     };
     this.goals.set(id, newGoal);
     return newGoal;
@@ -215,15 +218,21 @@ export class MemStorage implements IStorage {
         .filter(g => g.playerId === player.id)
         .reduce((sum, goal) => sum + goal.count, 0);
 
+      // Count assists
+      const assists = Array.from(this.goals.values())
+        .filter(g => g.playerId === player.id)
+        .reduce((sum, goal) => sum + goal.assists, 0);
+
       const goalRatio = appearances > 0 ? Number((goals / appearances).toFixed(1)) : 0;
 
       stats.push({
         id: player.id,
         name: player.name,
-        position: player.position,
+        position: player.position ?? null,
         number: player.number,
         appearances,
         goals,
+        assists,
         goalRatio,
       });
     }

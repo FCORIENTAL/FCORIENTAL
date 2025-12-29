@@ -6,7 +6,7 @@ import { z } from "zod";
 export const players = pgTable("players", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  position: text("position").notNull(),
+  position: text("position"),
   number: integer("number"),
   joinDate: date("join_date").notNull(),
 });
@@ -32,6 +32,7 @@ export const goals = pgTable("goals", {
   matchId: varchar("match_id").notNull(),
   playerId: varchar("player_id").notNull(),
   count: integer("count").notNull().default(1),
+  assists: integer("assists").notNull().default(0),
 });
 
 export const insertPlayerSchema = createInsertSchema(players).omit({
@@ -45,6 +46,7 @@ export const insertMatchSchema = createInsertSchema(matches).omit({
   playerGoals: z.array(z.object({
     playerId: z.string(),
     goals: z.number().min(0),
+    assists: z.number().min(0).optional(),
   })).optional(),
 });
 
@@ -71,10 +73,11 @@ export type Goal = typeof goals.$inferSelect;
 export interface PlayerStats {
   id: string;
   name: string;
-  position: string;
+  position: string | null;
   number: number | null;
   appearances: number;
   goals: number;
+  assists: number;
   goalRatio: number;
 }
 

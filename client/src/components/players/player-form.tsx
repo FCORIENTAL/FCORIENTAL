@@ -28,7 +28,7 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
     resolver: zodResolver(playerFormSchema),
     defaultValues: {
       name: player?.name || "",
-      position: player?.position || "",
+      position: player?.position || undefined,
       number: player?.number || undefined,
       joinDate: player?.joinDate || new Date().toISOString().split('T')[0],
     },
@@ -84,7 +84,7 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
   const onSubmit = (data: z.infer<typeof playerFormSchema>) => {
     const playerData: InsertPlayer = {
       name: data.name,
-      position: data.position,
+      position: data.position || undefined,
       number: data.number || null,
       joinDate: data.joinDate,
     };
@@ -114,30 +114,6 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
                   {...field} 
                 />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="position"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>포지션</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-player-position">
-                    <SelectValue placeholder="포지션을 선택하세요" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="골키퍼">골키퍼</SelectItem>
-                  <SelectItem value="수비수">수비수</SelectItem>
-                  <SelectItem value="미드필더">미드필더</SelectItem>
-                  <SelectItem value="공격수">공격수</SelectItem>
-                </SelectContent>
-              </Select>
               <FormMessage />
             </FormItem>
           )}

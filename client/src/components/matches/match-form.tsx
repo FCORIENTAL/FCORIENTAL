@@ -12,6 +12,7 @@ import { insertMatchSchema } from "@shared/schema";
 import type { Player, InsertMatch } from "@shared/schema";
 import { z } from "zod";
 import { useState } from "react";
+import { Label } from "@/components/ui/label";
 
 const matchFormSchema = insertMatchSchema.extend({
   ourScore: z.coerce.number().min(0),
@@ -25,6 +26,7 @@ interface MatchFormProps {
 export default function MatchForm({ onSuccess }: MatchFormProps) {
   const { toast } = useToast();
   const [playerGoals, setPlayerGoals] = useState<Record<string, number>>({});
+  const [playerAssists, setPlayerAssists] = useState<Record<string, number>>({});
 
   const { data: players = [] } = useQuery<Player[]>({
     queryKey: ["/api/players"],
@@ -60,6 +62,7 @@ export default function MatchForm({ onSuccess }: MatchFormProps) {
       });
       form.reset();
       setPlayerGoals({});
+      setPlayerAssists({});
       onSuccess?.();
     },
     onError: () => {
@@ -72,10 +75,14 @@ export default function MatchForm({ onSuccess }: MatchFormProps) {
   });
 
   const onSubmit = (data: z.infer<typeof matchFormSchema>) => {
-    // Convert playerGoals to the expected format
+    // Convert playerGoals and assists to the expected format
     const playerGoalsArray = Object.entries(playerGoals)
-      .filter(([_, goals]) => goals > 0)
-      .map(([playerId, goals]) => ({ playerId, goals }));
+      .filter(([_, goals]) => goals > 0 || playerAssists[_] > 0)
+      .map(([playerId, goals]) => ({ 
+        playerId, 
+        goals,
+        assists: playerAssists[playerId] || 0
+      }));
 
     const matchData: InsertMatch = {
       ...data,
@@ -89,6 +96,13 @@ export default function MatchForm({ onSuccess }: MatchFormProps) {
     setPlayerGoals(prev => ({
       ...prev,
       [playerId]: Math.max(0, goals)
+    }));
+  };
+
+  const handleAssistChange = (playerId: string, assists: number) => {
+    setPlayerAssists(prev => ({
+      ...prev,
+      [playerId]: Math.max(0, assists)
     }));
   };
 
@@ -201,8 +215,13 @@ export default function MatchForm({ onSuccess }: MatchFormProps) {
                                   field.onChange([...currentValue, player.id]);
                                 } else {
                                   field.onChange(currentValue.filter((value) => value !== player.id));
-                                  // Remove goals when player is deselected
+                                  // Remove goals and assists when player is deselected
                                   setPlayerGoals(prev => {
+                                    const updated = { ...prev };
+                                    delete updated[player.id];
+                                    return updated;
+                                  });
+                                  setPlayerAssists(prev => {
                                     const updated = { ...prev };
                                     delete updated[player.id];
                                     return updated;
@@ -225,29 +244,46 @@ export default function MatchForm({ onSuccess }: MatchFormProps) {
           )}
         />
 
-        {/* Goal inputs for selected participants */}
+        {/* Goal and Assist inputs for selected participants */}
         {selectedParticipants.length > 0 && (
           <div>
-            <FormLabel>득점자 기록</FormLabel>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border border-input rounded-lg bg-muted/30 mt-2">
+            <FormLabel>득점 및 어시스트 기록</FormLabel>
+            <div className="space-y-3 p-4 border border-input rounded-lg bg-muted/30 mt-2">
               {selectedParticipants.map((playerId) => {
                 const player = players.find(p => p.id === playerId);
                 if (!player) return null;
                 
                 return (
-                  <div key={playerId} className="flex items-center space-x-2">
-                    <label className="text-sm font-medium min-w-0 flex-1">
+                  <div key={playerId} className="flex items-center space-x-3 pb-3 border-b border-input last:border-b-0">
+                    <label className="text-sm font-medium min-w-32">
                       {player.name}
                     </label>
-                    <Input
-                      data-testid={`input-goals-${playerId}`}
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      className="w-16 h-8"
-                      value={playerGoals[playerId] || 0}
-                      onChange={(e) => handleGoalChange(playerId, parseInt(e.target.value) || 0)}
-                    />
+                    <div className="flex items-center space-x-2 flex-1">
+                      <div className="flex items-center space-x-1">
+                        <Label className="text-xs text-muted-foreground">득점</Label>
+                        <Input
+                          data-testid={`input-goals-${playerId}`}
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          className="w-16 h-8"
+                          value={playerGoals[playerId] || 0}
+                          onChange={(e) => handleGoalChange(playerId, parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Label className="text-xs text-muted-foreground">어시스트</Label>
+                        <Input
+                          data-testid={`input-assists-${playerId}`}
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          className="w-16 h-8"
+                          value={playerAssists[playerId] || 0}
+                          onChange={(e) => handleAssistChange(playerId, parseInt(e.target.value) || 0)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 );
               })}
