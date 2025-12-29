@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface User {
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (data) => {
       setUser(data.user);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      window.location.href = "/";
     },
   });
 

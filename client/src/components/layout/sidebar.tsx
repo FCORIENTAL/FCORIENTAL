@@ -44,14 +44,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       }`}
     >
       <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
-        <div className="flex items-center space-x-3">
-          <img 
-            src={logoImage} 
-            alt="FC ORIENTAL Logo" 
-            className="w-7 h-7 rounded-full object-cover"
-          />
-          <span className="font-bold text-lg text-sidebar-foreground">FC ORIENTAL</span>
-        </div>
+        <Link href="/">
+          <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <img 
+              src={logoImage} 
+              alt="FC ORIENTAL Logo" 
+              className="w-7 h-7 rounded-full object-cover"
+            />
+            <span className="font-bold text-lg text-sidebar-foreground">FC ORIENTAL</span>
+          </div>
+        </Link>
         <button 
           data-testid="button-close-sidebar"
           onClick={onClose}
