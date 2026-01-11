@@ -163,4 +163,15 @@ sudo certbot --nginx -d your-domain.com
 2. **중급자**: EC2 + PM2 + Nginx → 유연성과 제어권
 3. **고급자**: Docker + ECS → 확장성과 관리 편의성
 
-어떤 방법을 선택하시겠습니까?
+## 7. CI/CD 자동화 (GitHub Actions)
+
+프로젝트에 포함된 `.github/workflows/aws-deploy.yml` 파일을 사용하여 GitHub에 코드를 푸시할 때마다 자동으로 AWS ECR로 이미지를 빌드하고 푸시할 수 있습니다.
+
+### 설정 방법:
+1. GitHub 리포지토리의 **Settings > Secrets and variables > Actions**로 이동합니다.
+2. 다음 Repository secrets를 추가합니다:
+   - `AWS_ACCESS_KEY_ID`: AWS IAM 사용자의 액세스 키
+   - `AWS_SECRET_ACCESS_KEY`: AWS IAM 사용자의 비밀 액세스 키
+   - `AWS_APP_RUNNER_SERVICE_ARN`: (App Runner 사용 시) 서비스의 ARN
+
+이 설정이 완료되면 `main` 브랜치에 푸시할 때마다 자동으로 배포 프로세스가 시작됩니다.
