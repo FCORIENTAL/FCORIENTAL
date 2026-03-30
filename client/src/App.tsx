@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -63,16 +64,15 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      
+
       <SidebarComponent isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
+
       <div className="lg:pl-64">
         <Header onMenuToggle={() => setSidebarOpen(true)} />
         <main>
@@ -88,7 +88,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <AppContent />
+          <Router hook={useHashLocation}>
+            <AppContent />
+          </Router>
           <Toaster />
         </TooltipProvider>
       </AuthProvider>

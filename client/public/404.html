@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FC ORIENTAL</title>
+  <script>
+    // Redirect any direct URL to the hash-based SPA
+    var l = window.location;
+    var base = l.pathname.split('/').slice(0, 2).join('/');
+    l.replace(l.origin + base + '/#' + l.pathname.slice(base.length || 1) + l.search + l.hash);
+  </script>
+</head>
+<body></body>
+</html>
