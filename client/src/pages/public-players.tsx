@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Filter } from "lucide-react";
+import { getPlayers } from "@/lib/firebase";
 import type { Player } from "@shared/schema";
 
 export default function PublicPlayers() {
@@ -12,10 +13,11 @@ export default function PublicPlayers() {
   const [positionFilter, setPositionFilter] = useState<string>("all");
 
   const { data: players = [], isLoading } = useQuery<Player[]>({
-    queryKey: ["/api/players"],
+    queryKey: ["players"],
+    queryFn: () => getPlayers(),
   });
 
-  const filteredPlayers = players.filter(player => {
+  const filteredPlayers = players.filter((player) => {
     const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPosition = positionFilter === "all" || player.position === positionFilter;
     return matchesSearch && matchesPosition;
@@ -26,14 +28,8 @@ export default function PublicPlayers() {
       <div className="p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-48"></div>
-          <Card>
-            <CardContent className="p-4">
-              <div className="h-10 bg-muted rounded"></div>
-            </CardContent>
-          </Card>
-          <Card>
-            <div className="h-64 bg-muted rounded"></div>
-          </Card>
+          <Card><CardContent className="p-4"><div className="h-10 bg-muted rounded"></div></CardContent></Card>
+          <Card><div className="h-64 bg-muted rounded"></div></Card>
         </div>
       </div>
     );
@@ -45,7 +41,6 @@ export default function PublicPlayers() {
         <h2 className="text-xl font-semibold text-foreground">선수 목록</h2>
       </div>
 
-      {/* Search and Filter */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -80,7 +75,6 @@ export default function PublicPlayers() {
         </CardContent>
       </Card>
 
-      {/* Players Table - Read Only */}
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -114,18 +108,21 @@ export default function PublicPlayers() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span data-testid={`text-player-position-${player.id}`} className={`text-xs font-medium px-2 py-1 rounded-full ${
-                        player.position === '골키퍼' ? 'bg-red-100 text-red-800' :
-                        player.position === '수비수' ? 'bg-blue-100 text-blue-800' :
-                        player.position === '미드필더' ? 'bg-green-100 text-green-800' :
-                        player.position === '공격수' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {player.position}
+                      <span
+                        data-testid={`text-player-position-${player.id}`}
+                        className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          player.position === "골키퍼" ? "bg-red-100 text-red-800" :
+                          player.position === "수비수" ? "bg-blue-100 text-blue-800" :
+                          player.position === "미드필더" ? "bg-green-100 text-green-800" :
+                          player.position === "공격수" ? "bg-purple-100 text-purple-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {player.position || "-"}
                       </span>
                     </td>
                     <td data-testid={`text-player-number-display-${player.id}`} className="py-4 px-6 text-center text-foreground font-medium">
-                      {player.number || '-'}
+                      {player.number || "-"}
                     </td>
                     <td data-testid={`text-player-join-date-${player.id}`} className="py-4 px-6 text-center text-muted-foreground">
                       {player.joinDate}
@@ -135,10 +132,9 @@ export default function PublicPlayers() {
               ) : (
                 <tr>
                   <td colSpan={4} className="py-8 px-6 text-center text-muted-foreground">
-                    {searchTerm || positionFilter !== "all" 
-                      ? "검색 결과가 없습니다." 
-                      : "등록된 선수가 없습니다."
-                    }
+                    {searchTerm || positionFilter !== "all"
+                      ? "검색 결과가 없습니다."
+                      : "등록된 선수가 없습니다."}
                   </td>
                 </tr>
               )}

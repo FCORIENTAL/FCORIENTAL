@@ -68,7 +68,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 className="flex items-center space-x-2"
               >
                 <User className="w-4 h-4" />
-                <span data-testid="text-username">{user.username}</span>
+                <span data-testid="text-username">{user.email}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

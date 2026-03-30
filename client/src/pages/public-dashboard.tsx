@@ -1,25 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Trophy, Target, TrendingUp } from "lucide-react";
+import { getPlayerStats, getSeasonStats } from "@/lib/firebase";
 import type { PlayerStats } from "@shared/schema";
 
 export default function PublicDashboard() {
   const { data: playerStats, isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
-    queryKey: ["/api/players/stats"],
+    queryKey: ["playerStats"],
+    queryFn: () => getPlayerStats(),
   });
 
-  const { data: seasonStats, isLoading: isLoadingSeasonStats } = useQuery<{
-    totalMatches: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    totalGoals: number;
-    averageGoals: number;
-  }>({
-    queryKey: ["/api/season/2024/stats"],
+  const { data: seasonStats, isLoading: isLoadingSeasonStats } = useQuery({
+    queryKey: ["seasonStats", "2024"],
+    queryFn: () => getSeasonStats("2024"),
   });
 
-  const winRate = seasonStats?.totalMatches > 0 
+  const winRate = seasonStats && seasonStats.totalMatches > 0
     ? Math.round((seasonStats.wins / seasonStats.totalMatches) * 100)
     : 0;
 
@@ -42,7 +38,6 @@ export default function PublicDashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
@@ -59,7 +54,7 @@ export default function PublicDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -75,7 +70,7 @@ export default function PublicDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -91,7 +86,7 @@ export default function PublicDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -109,7 +104,6 @@ export default function PublicDashboard() {
         </Card>
       </div>
 
-      {/* Scoring Rankings */}
       <Card>
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">득점 순위</h2>
@@ -131,27 +125,25 @@ export default function PublicDashboard() {
                 playerStats.map((player, index) => (
                   <tr key={player.id} className="hover:bg-muted/50">
                     <td className="py-4 px-6">
-                      <div className="flex items-center">
-                        <span 
-                          data-testid={`text-rank-${index + 1}`}
-                          className={`text-xs font-bold px-2 py-1 rounded-full mr-2 ${
-                            index === 0 ? 'bg-yellow-100 text-yellow-800' :
-                            index === 1 ? 'bg-gray-100 text-gray-800' :
-                            index === 2 ? 'bg-orange-100 text-orange-800' :
-                            'text-muted-foreground font-medium'
-                          }`}
-                        >
-                          {index + 1}
-                        </span>
-                      </div>
+                      <span
+                        data-testid={`text-rank-${index + 1}`}
+                        className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          index === 0 ? "bg-yellow-100 text-yellow-800" :
+                          index === 1 ? "bg-gray-100 text-gray-800" :
+                          index === 2 ? "bg-orange-100 text-orange-800" :
+                          "text-muted-foreground font-medium"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                          index === 0 ? 'bg-primary text-primary-foreground' :
-                          index === 1 ? 'bg-secondary text-secondary-foreground' :
-                          index === 2 ? 'bg-accent text-accent-foreground' :
-                          'bg-muted text-muted-foreground'
+                          index === 0 ? "bg-primary text-primary-foreground" :
+                          index === 1 ? "bg-secondary text-secondary-foreground" :
+                          index === 2 ? "bg-accent text-accent-foreground" :
+                          "bg-muted text-muted-foreground"
                         }`}>
                           {player.name.charAt(0)}
                         </div>

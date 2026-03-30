@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getPlayers, getPlayerStats, deletePlayer } from "@/lib/firebase";
 import PlayerForm from "@/components/players/player-form";
 import type { Player, PlayerStats } from "@shared/schema";
 
@@ -15,39 +15,33 @@ export default function Players() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: playerStats = [], isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
-    queryKey: ["/api/players/stats"],
+    queryKey: ["playerStats"],
+    queryFn: () => getPlayerStats(),
   });
 
   const { data: players = [] } = useQuery<Player[]>({
-    queryKey: ["/api/players"],
+    queryKey: ["players"],
+    queryFn: () => getPlayers(),
   });
 
   const deletePlayerMutation = useMutation({
-    mutationFn: async (playerId: string) => {
-      await apiRequest("DELETE", `/api/players/${playerId}`);
-    },
+    mutationFn: (playerId: string) => deletePlayer(playerId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/players/stats"] });
-      toast({
-        title: "선수 삭제 완료",
-        description: "선수가 성공적으로 삭제되었습니다.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["playerStats"] });
+      toast({ title: "선수 삭제 완료", description: "선수가 성공적으로 삭제되었습니다." });
     },
     onError: () => {
-      toast({
-        title: "삭제 실패",
-        description: "선수 삭제 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "삭제 실패", description: "선수 삭제 중 오류가 발생했습니다.", variant: "destructive" });
     },
   });
 
-  const filteredStats = playerStats.filter(stat => {
-    return stat.name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredStats = playerStats.filter((stat) =>
+    stat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleDeletePlayer = (playerId: string) => {
     if (confirm("정말로 이 선수를 삭제하시겠습니까?")) {
@@ -60,14 +54,8 @@ export default function Players() {
       <div className="p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-48"></div>
-          <Card>
-            <CardContent className="p-4">
-              <div className="h-10 bg-muted rounded"></div>
-            </CardContent>
-          </Card>
-          <Card>
-            <div className="h-64 bg-muted rounded"></div>
-          </Card>
+          <Card><CardContent className="p-4"><div className="h-10 bg-muted rounded"></div></CardContent></Card>
+          <Card><div className="h-64 bg-muted rounded"></div></Card>
         </div>
       </div>
     );
@@ -85,17 +73,12 @@ export default function Players() {
             </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>새 선수 추가</DialogTitle>
-            </DialogHeader>
-            <PlayerForm 
-              onSuccess={() => setIsAddModalOpen(false)}
-            />
+            <DialogHeader><DialogTitle>새 선수 추가</DialogTitle></DialogHeader>
+            <PlayerForm onSuccess={() => setIsAddModalOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="p-4">
           <Input
@@ -109,7 +92,6 @@ export default function Players() {
         </CardContent>
       </Card>
 
-      {/* Players Table */}
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -125,7 +107,7 @@ export default function Players() {
             <tbody className="divide-y divide-border">
               {filteredStats.length > 0 ? (
                 filteredStats.map((stat) => {
-                  const player = players.find(p => p.id === stat.id);
+                  const player = players.find((p) => p.id === stat.id);
                   return (
                     <tr key={stat.id} className="hover:bg-muted/50">
                       <td className="py-4 px-6">
@@ -181,10 +163,7 @@ export default function Players() {
               ) : (
                 <tr>
                   <td colSpan={5} className="py-8 px-6 text-center text-muted-foreground">
-                    {searchTerm 
-                      ? "검색 결과가 없습니다." 
-                      : "등록된 선수가 없습니다."
-                    }
+                    {searchTerm ? "검색 결과가 없습니다." : "등록된 선수가 없습니다."}
                   </td>
                 </tr>
               )}
@@ -193,17 +172,11 @@ export default function Players() {
         </div>
       </Card>
 
-      {/* Edit Player Dialog */}
       <Dialog open={!!editingPlayer} onOpenChange={() => setEditingPlayer(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>선수 정보 수정</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>선수 정보 수정</DialogTitle></DialogHeader>
           {editingPlayer && (
-            <PlayerForm 
-              player={editingPlayer}
-              onSuccess={() => setEditingPlayer(null)}
-            />
+            <PlayerForm player={editingPlayer} onSuccess={() => setEditingPlayer(null)} />
           )}
         </DialogContent>
       </Dialog>

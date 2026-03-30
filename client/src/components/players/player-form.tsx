@@ -1,14 +1,13 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { addPlayer, updatePlayer } from "@/lib/firebase";
 import { insertPlayerSchema } from "@shared/schema";
-import type { Player, InsertPlayer } from "@shared/schema";
+import type { Player } from "@shared/schema";
 import { z } from "zod";
 
 const playerFormSchema = insertPlayerSchema.extend({
@@ -22,6 +21,7 @@ interface PlayerFormProps {
 
 export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const isEditing = !!player;
 
   const form = useForm<z.infer<typeof playerFormSchema>>({
@@ -30,69 +30,54 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
       name: player?.name || "",
       position: player?.position || undefined,
       number: player?.number || undefined,
-      joinDate: player?.joinDate || new Date().toISOString().split('T')[0],
+      joinDate: player?.joinDate || new Date().toISOString().split("T")[0],
     },
   });
 
   const createPlayerMutation = useMutation({
-    mutationFn: async (data: InsertPlayer) => {
-      const response = await apiRequest("POST", "/api/players", data);
-      return response.json();
-    },
+    mutationFn: (data: z.infer<typeof playerFormSchema>) =>
+      addPlayer({
+        name: data.name,
+        position: data.position ?? null,
+        number: data.number ?? null,
+        joinDate: data.joinDate,
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/players/stats"] });
-      toast({
-        title: "선수 추가 완료",
-        description: "새 선수가 성공적으로 추가되었습니다.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["playerStats"] });
+      toast({ title: "선수 추가 완료", description: "새 선수가 성공적으로 추가되었습니다." });
       form.reset();
       onSuccess?.();
     },
     onError: () => {
-      toast({
-        title: "추가 실패",
-        description: "선수 추가 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "추가 실패", description: "선수 추가 중 오류가 발생했습니다.", variant: "destructive" });
     },
   });
 
   const updatePlayerMutation = useMutation({
-    mutationFn: async (data: Partial<InsertPlayer>) => {
-      const response = await apiRequest("PUT", `/api/players/${player!.id}`, data);
-      return response.json();
-    },
+    mutationFn: (data: z.infer<typeof playerFormSchema>) =>
+      updatePlayer(player!.id, {
+        name: data.name,
+        position: data.position ?? null,
+        number: data.number ?? null,
+        joinDate: data.joinDate,
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/players/stats"] });
-      toast({
-        title: "선수 정보 수정 완료",
-        description: "선수 정보가 성공적으로 수정되었습니다.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["playerStats"] });
+      toast({ title: "선수 정보 수정 완료", description: "선수 정보가 성공적으로 수정되었습니다." });
       onSuccess?.();
     },
     onError: () => {
-      toast({
-        title: "수정 실패",
-        description: "선수 정보 수정 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "수정 실패", description: "선수 정보 수정 중 오류가 발생했습니다.", variant: "destructive" });
     },
   });
 
   const onSubmit = (data: z.infer<typeof playerFormSchema>) => {
-    const playerData: InsertPlayer = {
-      name: data.name,
-      position: data.position || undefined,
-      number: data.number || null,
-      joinDate: data.joinDate,
-    };
-
     if (isEditing) {
-      updatePlayerMutation.mutate(playerData);
+      updatePlayerMutation.mutate(data);
     } else {
-      createPlayerMutation.mutate(playerData);
+      createPlayerMutation.mutate(data);
     }
   };
 
@@ -108,11 +93,7 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
             <FormItem>
               <FormLabel>선수명</FormLabel>
               <FormControl>
-                <Input 
-                  data-testid="input-player-name"
-                  placeholder="선수명을 입력하세요" 
-                  {...field} 
-                />
+                <Input data-testid="input-player-name" placeholder="선수명을 입력하세요" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -126,12 +107,7 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
             <FormItem>
               <FormLabel>등번호 (선택사항)</FormLabel>
               <FormControl>
-                <Input
-                  data-testid="input-player-number"
-                  type="number"
-                  placeholder="등번호"
-                  {...field}
-                />
+                <Input data-testid="input-player-number" type="number" placeholder="등번호" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -145,11 +121,7 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
             <FormItem>
               <FormLabel>가입일</FormLabel>
               <FormControl>
-                <Input
-                  data-testid="input-player-join-date"
-                  type="date"
-                  {...field}
-                />
+                <Input data-testid="input-player-join-date" type="date" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -157,17 +129,12 @@ export default function PlayerForm({ player, onSuccess }: PlayerFormProps) {
         />
 
         <div className="flex justify-end space-x-3 pt-4">
-          <Button 
-            data-testid="button-cancel-player"
-            type="button" 
-            variant="outline"
-            onClick={() => onSuccess?.()}
-          >
+          <Button data-testid="button-cancel-player" type="button" variant="outline" onClick={() => onSuccess?.()}>
             취소
           </Button>
-          <Button 
+          <Button
             data-testid="button-save-player"
-            type="submit" 
+            type="submit"
             disabled={isPending}
             className="bg-primary text-primary-foreground hover:bg-accent"
           >

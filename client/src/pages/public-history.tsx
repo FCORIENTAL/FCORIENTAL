@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getMatchesWithDetails } from "@/lib/firebase";
 import type { MatchWithDetails } from "@shared/schema";
 
 export default function PublicHistory() {
@@ -10,10 +11,11 @@ export default function PublicHistory() {
   const [seasonFilter, setSeason] = useState("all");
 
   const { data: matches = [], isLoading } = useQuery<MatchWithDetails[]>({
-    queryKey: ["/api/matches/details"],
+    queryKey: ["matchesWithDetails"],
+    queryFn: () => getMatchesWithDetails(),
   });
 
-  const filteredMatches = matches.filter(match => {
+  const filteredMatches = matches.filter((match) => {
     const matchesSearch = match.opponent.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeason = seasonFilter === "all" || match.season === seasonFilter;
     return matchesSearch && matchesSeason;
@@ -21,23 +23,19 @@ export default function PublicHistory() {
 
   const getResultBadge = (result: string) => {
     switch (result) {
-      case 'win':
-        return 'win-indicator px-3 py-1 rounded-full text-xs font-bold';
-      case 'loss':
-        return 'loss-indicator px-3 py-1 rounded-full text-xs font-bold';
-      case 'draw':
-        return 'draw-indicator px-3 py-1 rounded-full text-xs font-bold';
-      default:
-        return 'bg-muted text-muted-foreground px-3 py-1 rounded-full text-xs font-bold';
+      case "win": return "win-indicator px-3 py-1 rounded-full text-xs font-bold";
+      case "loss": return "loss-indicator px-3 py-1 rounded-full text-xs font-bold";
+      case "draw": return "draw-indicator px-3 py-1 rounded-full text-xs font-bold";
+      default: return "bg-muted text-muted-foreground px-3 py-1 rounded-full text-xs font-bold";
     }
   };
 
   const getResultText = (result: string) => {
     switch (result) {
-      case 'win': return '승리';
-      case 'loss': return '패배';
-      case 'draw': return '무승부';
-      default: return '경기';
+      case "win": return "승리";
+      case "loss": return "패배";
+      case "draw": return "무승부";
+      default: return "경기";
     }
   };
 
@@ -68,7 +66,7 @@ export default function PublicHistory() {
             <SelectContent>
               <SelectItem value="all">전체 시즌</SelectItem>
               <SelectItem value="2024">2024 시즌</SelectItem>
-              <SelectItem value="2023">2023 시즌</SelectItem>
+              <SelectItem value="2025">2025 시즌</SelectItem>
             </SelectContent>
           </Select>
           <Input
@@ -82,7 +80,6 @@ export default function PublicHistory() {
         </div>
       </div>
 
-      {/* Match History - Read Only */}
       <div className="space-y-4">
         {filteredMatches.length > 0 ? (
           filteredMatches.map((match) => (
@@ -97,7 +94,7 @@ export default function PublicHistory() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-center space-x-8 mb-4">
                 <div className="text-center">
                   <div className="font-bold text-foreground text-lg">FC ORIENTAL</div>
@@ -115,14 +112,14 @@ export default function PublicHistory() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="pt-4 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-2">
                   출전 선수: <span data-testid={`text-participant-count-${match.id}`}>{match.participants.length}명</span>
                 </p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {match.participants.map((player) => (
-                    <span 
+                    <span
                       key={player.id}
                       data-testid={`text-participant-${match.id}-${player.id}`}
                       className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full"
@@ -136,7 +133,7 @@ export default function PublicHistory() {
                     <p className="text-sm text-muted-foreground mb-2">득점자:</p>
                     <div className="flex flex-wrap gap-2">
                       {match.goalDetails.map((goal) => (
-                        <span 
+                        <span
                           key={goal.playerId}
                           data-testid={`text-goal-scorer-${match.id}-${goal.playerId}`}
                           className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
@@ -161,10 +158,9 @@ export default function PublicHistory() {
         ) : (
           <Card className="p-8">
             <div className="text-center text-muted-foreground">
-              {searchTerm || seasonFilter !== "all" 
-                ? "검색 결과가 없습니다." 
-                : "아직 기록된 경기가 없습니다."
-              }
+              {searchTerm || seasonFilter !== "all"
+                ? "검색 결과가 없습니다."
+                : "아직 기록된 경기가 없습니다."}
             </div>
           </Card>
         )}

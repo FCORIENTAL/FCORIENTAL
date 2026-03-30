@@ -1,18 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-
-interface User {
-  id: string;
-  username: string;
-  role: string;
-}
+import { auth, fbSignIn, fbSignOut, onAuthStateChanged, type FirebaseUser } from "@/lib/firebase";
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAdmin: () => boolean;
 }
@@ -20,61 +12,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-
-  // 현재 사용자 정보 확인
-  const { data: authData, isLoading } = useQuery<{ user: User }>({
-    queryKey: ["/api/auth/me"],
-    retry: false,
-  });
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (authData?.user) {
-      setUser(authData.user);
-    }
-  }, [authData]);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setIsLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
-  const loginMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
-      const response = await apiRequest("POST", "/api/auth/login", { username, password });
-      return response.json() as Promise<{ user: User }>;
-    },
-    onSuccess: (data) => {
-      setUser(data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      window.location.href = "/";
-    },
-  });
-
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", "/api/auth/logout");
-    },
-    onSuccess: () => {
-      setUser(null);
-      queryClient.clear();
-      window.location.href = "/";
-    },
-  });
-
-  const login = async (username: string, password: string) => {
-    await loginMutation.mutateAsync({ username, password });
+  const login = async (email: string, password: string) => {
+    await fbSignIn(email, password);
   };
 
   const logout = () => {
-    logoutMutation.mutate();
+    fbSignOut();
   };
 
-  const isAdmin = () => user?.role === "admin";
+  const isAdmin = () => !!user;
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isLoading,
-      login,
-      logout,
-      isAdmin,
-    }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
