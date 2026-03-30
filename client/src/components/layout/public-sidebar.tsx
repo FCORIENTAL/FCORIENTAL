@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BarChart3, Users, History, X, Trophy, LogIn } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BarChart3, Users, History, X, Trophy } from "lucide-react";
 import logoImage from "@assets/FC오리엔탈_배경1_1756466321842.png";
 
 interface PublicSidebarProps {
@@ -31,10 +30,6 @@ const navigationItems = [
 
 export default function PublicSidebar({ isOpen, onClose }: PublicSidebarProps) {
   const [location] = useLocation();
-
-  const handleAdminLogin = () => {
-    window.location.href = "/login";
-  };
 
   return (
     <aside 
@@ -90,17 +85,7 @@ export default function PublicSidebar({ isOpen, onClose }: PublicSidebarProps) {
         })}
       </nav>
       
-      <div className="absolute bottom-6 left-6 right-6 space-y-4">
-        <Button
-          data-testid="button-admin-login"
-          onClick={handleAdminLogin}
-          className="w-full bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground"
-          size="sm"
-        >
-          <LogIn className="w-4 h-4 mr-2" />
-          관리자 로그인
-        </Button>
-        
+      <div className="absolute bottom-6 left-6 right-6">
         <div className="bg-sidebar-accent/20 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-1">
             <Trophy className="w-4 h-4 text-sidebar-foreground" />
