@@ -90,6 +90,10 @@ export async function deleteMatch(id: string) {
   await deleteDoc(doc(db, "matches", id));
 }
 
+export async function updateMatch(id: string, data: Omit<FirebaseMatch, "id">) {
+  await updateDoc(doc(db, "matches", id), data as Record<string, unknown>);
+}
+
 function calcResult(ourScore: number, theirScore: number): "win" | "loss" | "draw" {
   if (ourScore > theirScore) return "win";
   if (ourScore < theirScore) return "loss";

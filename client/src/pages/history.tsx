@@ -4,14 +4,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, Trash2 } from "lucide-react";
-import { getMatchesWithDetails, deleteMatch } from "@/lib/firebase";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Trash2, Pencil } from "lucide-react";
+import { getMatchesWithDetails, getMatches, deleteMatch, type FirebaseMatch } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import MatchForm from "@/components/matches/match-form";
 import type { MatchWithDetails } from "@shared/schema";
 
 export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
   const [seasonFilter, setSeason] = useState("all");
+  const [editingMatch, setEditingMatch] = useState<FirebaseMatch | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -20,10 +23,16 @@ export default function History() {
     queryFn: () => getMatchesWithDetails(),
   });
 
+  const { data: rawMatches = [] } = useQuery<FirebaseMatch[]>({
+    queryKey: ["matches"],
+    queryFn: () => getMatches(),
+  });
+
   const deleteMatchMutation = useMutation({
     mutationFn: (matchId: string) => deleteMatch(matchId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["matchesWithDetails"] });
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["playerStats"] });
       queryClient.invalidateQueries({ queryKey: ["seasonStats"] });
       toast({ title: "경기 삭제 완료", description: "경기가 성공적으로 삭제되었습니다." });
@@ -32,6 +41,11 @@ export default function History() {
       toast({ title: "삭제 실패", description: "경기 삭제 중 오류가 발생했습니다.", variant: "destructive" });
     },
   });
+
+  const handleEditClick = (matchId: string) => {
+    const raw = rawMatches.find((m) => m.id === matchId);
+    if (raw) setEditingMatch(raw);
+  };
 
   const filteredMatches = matches.filter((match) => {
     const matchesSearch = match.opponent.toLowerCase().includes(searchTerm.toLowerCase());
@@ -78,7 +92,7 @@ export default function History() {
         <h2 className="text-xl font-semibold text-foreground">경기 이력</h2>
         <div className="flex items-center space-x-2">
           <Select value={seasonFilter} onValueChange={setSeason}>
-            <SelectTrigger data-testid="select-season-filter" className="w-32">
+            <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -88,7 +102,6 @@ export default function History() {
             </SelectContent>
           </Select>
           <Input
-            data-testid="input-search-opponent"
             type="text"
             placeholder="상대팀 검색..."
             value={searchTerm}
@@ -104,54 +117,54 @@ export default function History() {
             <Card key={match.id} className="p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4">
-                  <div data-testid={`text-match-date-${match.id}`} className="text-sm text-muted-foreground">
-                    {match.date}
-                  </div>
-                  <div data-testid={`badge-match-result-${match.id}`} className={getResultBadge(match.result)}>
-                    {getResultText(match.result)}
-                  </div>
+                  <div className="text-sm text-muted-foreground">{match.date}</div>
+                  <div className={getResultBadge(match.result)}>{getResultText(match.result)}</div>
+                  <div className="text-xs text-muted-foreground">{match.season} 시즌</div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (confirm("이 경기를 삭제하시겠습니까?")) {
-                      deleteMatchMutation.mutate(match.id);
-                    }
-                  }}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditClick(match.id)}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm("이 경기를 삭제하시겠습니까?")) {
+                        deleteMatchMutation.mutate(match.id);
+                      }
+                    }}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center justify-center space-x-8 mb-4">
                 <div className="text-center">
                   <div className="font-bold text-foreground text-lg">FC ORIENTAL</div>
-                  <div data-testid={`text-our-score-${match.id}`} className="text-3xl font-bold text-primary mt-2">
-                    {match.ourScore}
-                  </div>
+                  <div className="text-3xl font-bold text-primary mt-2">{match.ourScore}</div>
                 </div>
                 <div className="text-muted-foreground">VS</div>
                 <div className="text-center">
-                  <div data-testid={`text-opponent-${match.id}`} className="font-bold text-foreground text-lg">
-                    {match.opponent}
-                  </div>
-                  <div data-testid={`text-their-score-${match.id}`} className="text-3xl font-bold text-muted-foreground mt-2">
-                    {match.theirScore}
-                  </div>
+                  <div className="font-bold text-foreground text-lg">{match.opponent}</div>
+                  <div className="text-3xl font-bold text-muted-foreground mt-2">{match.theirScore}</div>
                 </div>
               </div>
 
               <div className="pt-4 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-2">
-                  출전 선수: <span data-testid={`text-participant-count-${match.id}`}>{match.participants.length}명</span>
+                  출전 선수: <span>{match.participants.length}명</span>
                 </p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {match.participants.map((player) => (
                     <span
                       key={player.id}
-                      data-testid={`text-participant-${match.id}-${player.id}`}
                       className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full"
                     >
                       {player.name}
@@ -165,7 +178,6 @@ export default function History() {
                       {match.goalDetails.map((goal) => (
                         <span
                           key={goal.playerId}
-                          data-testid={`text-goal-scorer-${match.id}-${goal.playerId}`}
                           className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
                         >
                           {goal.playerName} ({goal.goals}골)
@@ -177,9 +189,7 @@ export default function History() {
                 {match.notes && (
                   <div className="mt-2">
                     <p className="text-sm text-muted-foreground mb-1">메모:</p>
-                    <p data-testid={`text-match-notes-${match.id}`} className="text-sm text-foreground">
-                      {match.notes}
-                    </p>
+                    <p className="text-sm text-foreground">{match.notes}</p>
                   </div>
                 )}
               </div>
@@ -195,6 +205,20 @@ export default function History() {
           </Card>
         )}
       </div>
+
+      <Dialog open={!!editingMatch} onOpenChange={(open) => { if (!open) setEditingMatch(null); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>경기 수정</DialogTitle>
+          </DialogHeader>
+          {editingMatch && (
+            <MatchForm
+              initialMatch={editingMatch}
+              onSuccess={() => setEditingMatch(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
