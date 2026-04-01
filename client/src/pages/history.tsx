@@ -107,7 +107,6 @@ export default function History() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 시즌</SelectItem>
-              <SelectItem value="2024">2024 시즌</SelectItem>
               <SelectItem value={currentYear}>{currentYear} 시즌</SelectItem>
             </SelectContent>
           </Select>
