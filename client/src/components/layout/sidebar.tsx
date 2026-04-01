@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { BarChart3, Users, Calendar, History, X, Trophy } from "lucide-react";
 import logoImage from "@assets/FC오리엔탈_배경1_1756466321842.png";
+import { useYear } from "@/contexts/YearContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ const navigationItems = [
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location] = useLocation();
+  const { selectedYear } = useYear();
 
   return (
     <aside 
@@ -95,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="bg-sidebar-accent/20 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-1">
             <Trophy className="w-4 h-4 text-sidebar-foreground" />
-            <h4 className="font-medium text-sm text-sidebar-foreground">2024 시즌</h4>
+            <h4 className="font-medium text-sm text-sidebar-foreground">{selectedYear} 시즌</h4>
           </div>
           <p className="text-xs text-sidebar-foreground/80" data-testid="text-season-stats">
             시즌 기록을 확인하세요

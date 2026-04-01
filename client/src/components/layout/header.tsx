@@ -1,12 +1,14 @@
-import { Menu, Settings, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
+import { useYear } from "@/contexts/YearContext";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
@@ -29,7 +31,8 @@ const publicPageTitles: Record<string, string> = {
 export default function Header({ onMenuToggle }: HeaderProps) {
   const [location] = useLocation();
   const { user, logout, isAdmin } = useAuth();
-  
+  const { selectedYear, setSelectedYear, availableYears } = useYear();
+
   const isAdminUser = user && isAdmin();
   const titles = isAdminUser ? pageTitles : publicPageTitles;
   const pageTitle = titles[location] || "FC ORIENTAL";
@@ -54,9 +57,18 @@ export default function Header({ onMenuToggle }: HeaderProps) {
       </div>
       
       <div className="flex items-center space-x-3">
-        <div className="bg-muted px-3 py-1 rounded-full text-xs font-medium text-muted-foreground">
-          2024 시즌
-        </div>
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="h-8 w-28 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableYears.map((year) => (
+              <SelectItem key={year} value={year} className="text-xs">
+                {year} 시즌
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         
         {isAdminUser ? (
           <DropdownMenu>

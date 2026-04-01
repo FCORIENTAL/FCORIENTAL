@@ -127,19 +127,24 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
   }));
 }
 
-export async function getPlayerStats(): Promise<PlayerStats[]> {
+export async function getPlayerStats(season?: string): Promise<PlayerStats[]> {
   const [players, matches] = await Promise.all([getPlayers(), getMatches()]);
+
+  const filteredMatches =
+    season && season !== "all"
+      ? matches.filter((m) => m.season === season)
+      : matches;
 
   return players
     .map((player) => {
-      const appearances = matches.filter((m) =>
+      const appearances = filteredMatches.filter((m) =>
         m.participants.includes(player.id)
       ).length;
-      const goals = matches.reduce((sum, m) => {
+      const goals = filteredMatches.reduce((sum, m) => {
         const g = m.goals.find((g) => g.playerId === player.id);
         return sum + (g?.count ?? 0);
       }, 0);
-      const assists = matches.reduce((sum, m) => {
+      const assists = filteredMatches.reduce((sum, m) => {
         const g = m.goals.find((g) => g.playerId === player.id);
         return sum + (g?.assists ?? 0);
       }, 0);

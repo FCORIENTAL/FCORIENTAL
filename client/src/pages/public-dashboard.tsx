@@ -2,19 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Trophy, Target, TrendingUp } from "lucide-react";
 import { getPlayerStats, getSeasonStats } from "@/lib/firebase";
+import { useYear } from "@/contexts/YearContext";
 import type { PlayerStats } from "@shared/schema";
 
-const currentYear = String(new Date().getFullYear());
-
 export default function PublicDashboard() {
+  const { selectedYear } = useYear();
+
   const { data: playerStats, isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
-    queryKey: ["playerStats"],
-    queryFn: () => getPlayerStats(),
+    queryKey: ["playerStats", selectedYear],
+    queryFn: () => getPlayerStats(selectedYear),
   });
 
   const { data: seasonStats, isLoading: isLoadingSeasonStats } = useQuery({
-    queryKey: ["seasonStats", currentYear],
-    queryFn: () => getSeasonStats(currentYear),
+    queryKey: ["seasonStats", selectedYear],
+    queryFn: () => getSeasonStats(selectedYear),
   });
 
   const winRate = seasonStats && seasonStats.totalMatches > 0
@@ -109,7 +110,7 @@ export default function PublicDashboard() {
       <Card>
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">득점 순위</h2>
-          <p className="text-sm text-muted-foreground mt-1">{currentYear} 시즌 개인 득점 기록</p>
+          <p className="text-sm text-muted-foreground mt-1">{selectedYear} 시즌 개인 득점 기록</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
