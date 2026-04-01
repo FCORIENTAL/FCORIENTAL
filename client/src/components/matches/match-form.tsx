@@ -62,7 +62,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           ourScore: 0,
           theirScore: 0,
           notes: "",
-          season: "2025",
+          season: String(new Date().getFullYear()),
           participants: [],
           playerGoals: [],
         },

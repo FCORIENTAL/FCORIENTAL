@@ -87,6 +87,7 @@ export interface MatchWithDetails extends Match {
     playerId: string;
     playerName: string;
     goals: number;
+    assists: number;
   }>;
   result: 'win' | 'loss' | 'draw';
 }

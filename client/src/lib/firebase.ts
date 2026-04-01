@@ -117,11 +117,12 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
       .map((pid) => playerMap.get(pid))
       .filter(Boolean) as Player[],
     goalDetails: m.goals
-      .filter((g) => g.count > 0)
+      .filter((g) => g.count > 0 || g.assists > 0)
       .map((g) => ({
         playerId: g.playerId,
         playerName: playerMap.get(g.playerId)?.name ?? "알 수 없음",
         goals: g.count,
+        assists: g.assists,
       })),
   }));
 }

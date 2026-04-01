@@ -4,6 +4,8 @@ import { Calendar, Trophy, Target, TrendingUp } from "lucide-react";
 import { getPlayerStats, getSeasonStats } from "@/lib/firebase";
 import type { PlayerStats } from "@shared/schema";
 
+const currentYear = String(new Date().getFullYear());
+
 export default function PublicDashboard() {
   const { data: playerStats, isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
     queryKey: ["playerStats"],
@@ -11,8 +13,8 @@ export default function PublicDashboard() {
   });
 
   const { data: seasonStats, isLoading: isLoadingSeasonStats } = useQuery({
-    queryKey: ["seasonStats", "2024"],
-    queryFn: () => getSeasonStats("2024"),
+    queryKey: ["seasonStats", currentYear],
+    queryFn: () => getSeasonStats(currentYear),
   });
 
   const winRate = seasonStats && seasonStats.totalMatches > 0
@@ -107,7 +109,7 @@ export default function PublicDashboard() {
       <Card>
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">득점 순위</h2>
-          <p className="text-sm text-muted-foreground mt-1">2024 시즌 개인 득점 기록</p>
+          <p className="text-sm text-muted-foreground mt-1">{currentYear} 시즌 개인 득점 기록</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

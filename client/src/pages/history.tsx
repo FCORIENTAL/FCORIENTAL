@@ -5,16 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, ChevronRight } from "lucide-react";
 import { getMatchesWithDetails, getMatches, deleteMatch, type FirebaseMatch } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import MatchForm from "@/components/matches/match-form";
+import MatchDetailDialog from "@/components/matches/match-detail-dialog";
 import type { MatchWithDetails } from "@shared/schema";
+
+const currentYear = String(new Date().getFullYear());
 
 export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
   const [seasonFilter, setSeason] = useState("all");
   const [editingMatch, setEditingMatch] = useState<FirebaseMatch | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<MatchWithDetails | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -42,9 +46,17 @@ export default function History() {
     },
   });
 
-  const handleEditClick = (matchId: string) => {
+  const handleEditClick = (e: React.MouseEvent, matchId: string) => {
+    e.stopPropagation();
     const raw = rawMatches.find((m) => m.id === matchId);
     if (raw) setEditingMatch(raw);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, matchId: string) => {
+    e.stopPropagation();
+    if (confirm("이 경기를 삭제하시겠습니까?")) {
+      deleteMatchMutation.mutate(matchId);
+    }
   };
 
   const filteredMatches = matches.filter((match) => {
@@ -74,13 +86,11 @@ export default function History() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse space-y-6">
+        <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-48"></div>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="h-48 bg-muted rounded"></Card>
-            ))}
-          </div>
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="h-24 bg-muted rounded"></Card>
+          ))}
         </div>
       </div>
     );
@@ -98,7 +108,7 @@ export default function History() {
             <SelectContent>
               <SelectItem value="all">전체 시즌</SelectItem>
               <SelectItem value="2024">2024 시즌</SelectItem>
-              <SelectItem value="2025">2025 시즌</SelectItem>
+              <SelectItem value={currentYear}>{currentYear} 시즌</SelectItem>
             </SelectContent>
           </Select>
           <Input
@@ -111,87 +121,50 @@ export default function History() {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredMatches.length > 0 ? (
           filteredMatches.map((match) => (
-            <Card key={match.id} className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-muted-foreground">{match.date}</div>
+            <Card
+              key={match.id}
+              className="p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setSelectedMatch(match)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className={getResultBadge(match.result)}>{getResultText(match.result)}</div>
-                  <div className="text-xs text-muted-foreground">{match.season} 시즌</div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditClick(match.id)}
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm("이 경기를 삭제하시겠습니까?")) {
-                        deleteMatchMutation.mutate(match.id);
-                      }
-                    }}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center space-x-8 mb-4">
-                <div className="text-center">
-                  <div className="font-bold text-foreground text-lg">FC ORIENTAL</div>
-                  <div className="text-3xl font-bold text-primary mt-2">{match.ourScore}</div>
-                </div>
-                <div className="text-muted-foreground">VS</div>
-                <div className="text-center">
-                  <div className="font-bold text-foreground text-lg">{match.opponent}</div>
-                  <div className="text-3xl font-bold text-muted-foreground mt-2">{match.theirScore}</div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-2">
-                  출전 선수: <span>{match.participants.length}명</span>
-                </p>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {match.participants.map((player) => (
-                    <span
-                      key={player.id}
-                      className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full"
-                    >
-                      {player.name}
-                    </span>
-                  ))}
-                </div>
-                {match.goalDetails.length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">득점자:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {match.goalDetails.map((goal) => (
-                        <span
-                          key={goal.playerId}
-                          className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
-                        >
-                          {goal.playerName} ({goal.goals}골)
-                        </span>
-                      ))}
+                  <div className="min-w-0">
+                    <div className="font-semibold text-foreground truncate">
+                      FC ORIENTAL {match.ourScore} - {match.theirScore} {match.opponent}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {match.date} · {match.season} 시즌 · {match.participants.length}명 출전
                     </div>
                   </div>
-                )}
-                {match.notes && (
-                  <div className="mt-2">
-                    <p className="text-sm text-muted-foreground mb-1">메모:</p>
-                    <p className="text-sm text-foreground">{match.notes}</p>
-                  </div>
-                )}
+                </div>
+                <div className="flex items-center gap-1 ml-2 shrink-0">
+                  {match.goalDetails.length > 0 && (
+                    <span className="text-xs text-primary font-medium hidden sm:block mr-1">
+                      ⚽ {match.goalDetails.reduce((s, g) => s + g.goals, 0)}골
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleEditClick(e, match.id)}
+                    className="text-muted-foreground hover:text-primary h-8 w-8 p-0"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleDeleteClick(e, match.id)}
+                    className="text-muted-foreground hover:text-destructive h-8 w-8 p-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
               </div>
             </Card>
           ))
@@ -206,6 +179,10 @@ export default function History() {
         )}
       </div>
 
+      {/* 상세보기 다이얼로그 */}
+      <MatchDetailDialog match={selectedMatch} onClose={() => setSelectedMatch(null)} />
+
+      {/* 수정 다이얼로그 */}
       <Dialog open={!!editingMatch} onOpenChange={(open) => { if (!open) setEditingMatch(null); }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
