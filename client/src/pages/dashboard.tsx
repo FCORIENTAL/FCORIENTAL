@@ -9,6 +9,13 @@ import type { PlayerStats } from "@shared/schema";
 type SortKey = "appearances" | "goals" | "assists" | "attackPoints";
 type SortDir = "desc" | "asc";
 
+const MOBILE_TABS: { key: SortKey; label: string }[] = [
+  { key: "appearances", label: "출석" },
+  { key: "goals", label: "득점" },
+  { key: "assists", label: "어시스트" },
+  { key: "attackPoints", label: "공격P" },
+];
+
 function attackPoints(player: PlayerStats): number {
   if (player.appearances === 0) return 0;
   return Math.round(((player.goals + player.assists) / player.appearances) * 10) / 10;
@@ -18,6 +25,7 @@ export default function Dashboard() {
   const { selectedYear } = useYear();
   const [sortKey, setSortKey] = useState<SortKey>("goals");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [mobileCol, setMobileCol] = useState<SortKey>("appearances");
 
   const { data: playerStats, isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
     queryKey: ["playerStats", selectedYear],
@@ -56,6 +64,14 @@ export default function Dashboard() {
     return sortDir === "desc"
       ? <ChevronDown className="w-3 h-3 inline ml-1" />
       : <ChevronUp className="w-3 h-3 inline ml-1" />;
+  }
+
+  function colClass(key: SortKey) {
+    return `text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground ${mobileCol === key ? "table-cell" : "hidden"} sm:table-cell`;
+  }
+
+  function cellClass(key: SortKey) {
+    return `py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm ${mobileCol === key ? "table-cell" : "hidden"} sm:table-cell`;
   }
 
   if (isLoadingStats || isLoadingSeasonStats) {
@@ -144,38 +160,44 @@ export default function Dashboard() {
       </div>
 
       <Card>
-        <div className="p-6 border-b border-border">
+        <div className="p-4 sm:p-6 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">선수 기록</h2>
           <p className="text-sm text-muted-foreground mt-1">{selectedYear} 시즌 개인 기록</p>
         </div>
+
+        {/* 모바일 탭 */}
+        <div className="flex sm:hidden gap-2 px-4 py-3 border-b border-border overflow-x-auto">
+          {MOBILE_TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setMobileCol(key)}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                mobileCol === key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
                 <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">순위</th>
                 <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">선수명</th>
-                <th
-                  className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("appearances")}
-                >
+                <th className={colClass("appearances")} onClick={() => handleSort("appearances")}>
                   출석<SortIcon col="appearances" />
                 </th>
-                <th
-                  className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("goals")}
-                >
+                <th className={colClass("goals")} onClick={() => handleSort("goals")}>
                   득점<SortIcon col="goals" />
                 </th>
-                <th
-                  className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground hidden sm:table-cell"
-                  onClick={() => handleSort("assists")}
-                >
+                <th className={colClass("assists")} onClick={() => handleSort("assists")}>
                   어시스트<SortIcon col="assists" />
                 </th>
-                <th
-                  className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground hidden sm:table-cell"
-                  onClick={() => handleSort("attackPoints")}
-                >
+                <th className={colClass("attackPoints")} onClick={() => handleSort("attackPoints")}>
                   경기당 공격P<SortIcon col="attackPoints" />
                 </th>
               </tr>
@@ -212,18 +234,16 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </td>
-                    <td data-testid={`text-appearances-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm">
+                    <td data-testid={`text-appearances-${player.id}`} className={cellClass("appearances")}>
                       {player.appearances}
                     </td>
-                    <td className="py-3 px-3 sm:py-4 sm:px-6 text-center">
-                      <span data-testid={`text-goals-${player.id}`} className="font-bold text-primary text-base sm:text-lg">
-                        {player.goals}
-                      </span>
+                    <td className={`${cellClass("goals")} !text-primary font-bold text-base sm:text-lg`}>
+                      <span data-testid={`text-goals-${player.id}`}>{player.goals}</span>
                     </td>
-                    <td data-testid={`text-assists-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm hidden sm:table-cell">
+                    <td data-testid={`text-assists-${player.id}`} className={cellClass("assists")}>
                       {player.assists}
                     </td>
-                    <td data-testid={`text-attack-points-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm hidden sm:table-cell">
+                    <td data-testid={`text-attack-points-${player.id}`} className={cellClass("attackPoints")}>
                       {attackPoints(player).toFixed(1)}
                     </td>
                   </tr>
