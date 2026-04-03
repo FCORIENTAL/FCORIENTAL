@@ -23,7 +23,7 @@ const navigationItems = [
   },
   {
     href: "/history",
-    label: "경기 이력",
+    label: "경기 기록",
     icon: History,
     testId: "nav-history"
   }

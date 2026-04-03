@@ -80,34 +80,34 @@ export default function PublicPlayers() {
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
-                <th className="text-left py-3 px-6 font-medium text-muted-foreground">선수명</th>
-                <th className="text-left py-3 px-6 font-medium text-muted-foreground">포지션</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">번호</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">가입일</th>
+                <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">선수명</th>
+                <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">포지션</th>
+                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground">번호</th>
+                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground hidden sm:table-cell">가입일</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filteredPlayers.length > 0 ? (
                 filteredPlayers.map((player) => (
                   <tr key={player.id} className="hover:bg-muted/50">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
+                    <td className="py-3 px-3 sm:py-4 sm:px-6">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold shrink-0">
                           {player.name.charAt(0)}
                         </div>
                         <div>
-                          <p data-testid={`text-player-name-${player.id}`} className="font-medium text-foreground">
+                          <p data-testid={`text-player-name-${player.id}`} className="font-medium text-foreground text-sm sm:text-base">
                             {player.name}
                           </p>
                           {player.number && (
-                            <p data-testid={`text-player-number-${player.id}`} className="text-sm text-muted-foreground">
+                            <p data-testid={`text-player-number-${player.id}`} className="text-xs text-muted-foreground">
                               #{player.number}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-3 px-3 sm:py-4 sm:px-6">
                       <span
                         data-testid={`text-player-position-${player.id}`}
                         className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -121,10 +121,10 @@ export default function PublicPlayers() {
                         {player.position || "-"}
                       </span>
                     </td>
-                    <td data-testid={`text-player-number-display-${player.id}`} className="py-4 px-6 text-center text-foreground font-medium">
+                    <td data-testid={`text-player-number-display-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-foreground font-medium text-sm">
                       {player.number || "-"}
                     </td>
-                    <td data-testid={`text-player-join-date-${player.id}`} className="py-4 px-6 text-center text-muted-foreground">
+                    <td data-testid={`text-player-join-date-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm hidden sm:table-cell">
                       {player.joinDate}
                     </td>
                   </tr>

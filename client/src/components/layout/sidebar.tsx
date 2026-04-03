@@ -23,13 +23,13 @@ const navigationItems = [
   },
   {
     href: "/matches",
-    label: "경기 기록",
+    label: "경기 추가",
     icon: Calendar,
     testId: "nav-matches"
   },
   {
     href: "/history",
-    label: "경기 이력",
+    label: "경기 기록",
     icon: History,
     testId: "nav-history"
   }
