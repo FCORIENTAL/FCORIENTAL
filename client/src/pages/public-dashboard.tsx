@@ -1,12 +1,31 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Trophy, Target, TrendingUp } from "lucide-react";
+import { Calendar, Trophy, Target, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { getPlayerStats, getSeasonStats } from "@/lib/firebase";
 import { useYear } from "@/contexts/YearContext";
 import type { PlayerStats } from "@shared/schema";
 
+type SortKey = "appearances" | "goals" | "assists" | "attackPoints";
+type SortDir = "desc" | "asc";
+
+const MOBILE_TABS: { key: SortKey; label: string }[] = [
+  { key: "appearances", label: "출석" },
+  { key: "goals", label: "득점" },
+  { key: "assists", label: "어시스트" },
+  { key: "attackPoints", label: "공격P" },
+];
+
+function attackPoints(player: PlayerStats): number {
+  if (player.appearances === 0) return 0;
+  return Math.round(((player.goals + player.assists) / player.appearances) * 10) / 10;
+}
+
 export default function PublicDashboard() {
   const { selectedYear } = useYear();
+  const [sortKey, setSortKey] = useState<SortKey>("goals");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [mobileCol, setMobileCol] = useState<SortKey>("appearances");
 
   const { data: playerStats, isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
     queryKey: ["playerStats", selectedYear],
@@ -21,6 +40,39 @@ export default function PublicDashboard() {
   const winRate = seasonStats && seasonStats.totalMatches > 0
     ? Math.round((seasonStats.wins / seasonStats.totalMatches) * 100)
     : 0;
+
+  const sortedStats = useMemo(() => {
+    if (!playerStats) return [];
+    return [...playerStats].sort((a, b) => {
+      const aVal = sortKey === "attackPoints" ? attackPoints(a) : a[sortKey];
+      const bVal = sortKey === "attackPoints" ? attackPoints(b) : b[sortKey];
+      return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+    });
+  }, [playerStats, sortKey, sortDir]);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ChevronsUpDown className="w-3 h-3 inline ml-1 opacity-40" />;
+    return sortDir === "desc"
+      ? <ChevronDown className="w-3 h-3 inline ml-1" />
+      : <ChevronUp className="w-3 h-3 inline ml-1" />;
+  }
+
+  function colClass(key: SortKey) {
+    return `text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground ${mobileCol === key ? "table-cell" : "hidden"} sm:table-cell`;
+  }
+
+  function cellClass(key: SortKey) {
+    return `py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm ${mobileCol === key ? "table-cell" : "hidden"} sm:table-cell`;
+  }
 
   if (isLoadingStats || isLoadingSeasonStats) {
     return (
@@ -108,24 +160,51 @@ export default function PublicDashboard() {
       </div>
 
       <Card>
-        <div className="p-6 border-b border-border">
-          <h2 className="text-lg font-semibold text-foreground">득점 순위</h2>
-          <p className="text-sm text-muted-foreground mt-1">{selectedYear} 시즌 개인 득점 기록</p>
+        <div className="p-4 sm:p-6 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">선수 기록</h2>
+          <p className="text-sm text-muted-foreground mt-1">{selectedYear} 시즌 개인 기록</p>
         </div>
+
+        {/* 모바일 탭 */}
+        <div className="flex sm:hidden gap-2 px-4 py-3 border-b border-border overflow-x-auto">
+          {MOBILE_TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setMobileCol(key)}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                mobileCol === key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
                 <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">순위</th>
                 <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">선수명</th>
-                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground">출전</th>
-                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground">득점</th>
-                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground hidden sm:table-cell">경기당 득점</th>
+                <th className={colClass("appearances")} onClick={() => handleSort("appearances")}>
+                  출석<SortIcon col="appearances" />
+                </th>
+                <th className={colClass("goals")} onClick={() => handleSort("goals")}>
+                  득점<SortIcon col="goals" />
+                </th>
+                <th className={colClass("assists")} onClick={() => handleSort("assists")}>
+                  어시스트<SortIcon col="assists" />
+                </th>
+                <th className={colClass("attackPoints")} onClick={() => handleSort("attackPoints")}>
+                  경기당 공격P<SortIcon col="attackPoints" />
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {playerStats && playerStats.length > 0 ? (
-                playerStats.map((player, index) => (
+              {sortedStats.length > 0 ? (
+                sortedStats.map((player, index) => (
                   <tr key={player.id} className="hover:bg-muted/50">
                     <td className="py-3 px-3 sm:py-4 sm:px-6">
                       <span
@@ -155,22 +234,23 @@ export default function PublicDashboard() {
                         </span>
                       </div>
                     </td>
-                    <td data-testid={`text-appearances-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm">
+                    <td data-testid={`text-appearances-${player.id}`} className={cellClass("appearances")}>
                       {player.appearances}
                     </td>
-                    <td className="py-3 px-3 sm:py-4 sm:px-6 text-center">
-                      <span data-testid={`text-goals-${player.id}`} className="font-bold text-primary text-base sm:text-lg">
-                        {player.goals}
-                      </span>
+                    <td className={`${cellClass("goals")} !text-primary font-bold text-base sm:text-lg`}>
+                      <span data-testid={`text-goals-${player.id}`}>{player.goals}</span>
                     </td>
-                    <td data-testid={`text-goal-ratio-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm hidden sm:table-cell">
-                      {player.goalRatio}
+                    <td data-testid={`text-assists-${player.id}`} className={cellClass("assists")}>
+                      {player.assists}
+                    </td>
+                    <td data-testid={`text-attack-points-${player.id}`} className={cellClass("attackPoints")}>
+                      {attackPoints(player).toFixed(1)}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-8 px-6 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-8 px-6 text-center text-muted-foreground">
                     아직 등록된 선수가 없습니다.
                   </td>
                 </tr>

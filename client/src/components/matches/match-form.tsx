@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { X, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPlayers, addMatch, updateMatch, type FirebaseMatch } from "@/lib/firebase";
 import { insertMatchSchema } from "@shared/schema";
@@ -18,6 +19,11 @@ const matchFormSchema = insertMatchSchema.extend({
   ourScore: z.coerce.number().min(0),
   theirScore: z.coerce.number().min(0),
 });
+
+interface Mercenary {
+  id: string;
+  name: string;
+}
 
 interface MatchFormProps {
   onSuccess?: () => void;
@@ -37,6 +43,9 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
     if (!initialMatch) return {};
     return Object.fromEntries(initialMatch.goals.map((g) => [g.playerId, g.assists]));
   });
+  const [mercenaries, setMercenaries] = useState<Mercenary[]>(
+    () => initialMatch?.mercenaries ?? []
+  );
 
   const { data: players = [] } = useQuery<Player[]>({
     queryKey: ["players"],
@@ -69,12 +78,11 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
   });
 
   const buildGoals = () =>
-    Object.entries(playerGoals)
-      .map(([playerId, count]) => ({
-        playerId,
-        count,
-        assists: playerAssists[playerId] || 0,
-      }));
+    Object.entries(playerGoals).map(([playerId, count]) => ({
+      playerId,
+      count,
+      assists: playerAssists[playerId] || 0,
+    }));
 
   const saveMatchMutation = useMutation({
     mutationFn: (data: z.infer<typeof matchFormSchema>) => {
@@ -87,10 +95,9 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         season: data.season,
         participants: data.participants,
         goals: buildGoals(),
+        mercenaries: mercenaries.length > 0 ? mercenaries : undefined,
       };
-      if (isEditMode) {
-        return updateMatch(initialMatch.id, payload);
-      }
+      if (isEditMode) return updateMatch(initialMatch.id, payload);
       return addMatch(payload);
     },
     onSuccess: () => {
@@ -108,6 +115,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         form.reset();
         setPlayerGoals({});
         setPlayerAssists({});
+        setMercenaries([]);
       }
       onSuccess?.();
     },
@@ -126,6 +134,35 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
 
   const handleAssistChange = (playerId: string, assists: number) => {
     setPlayerAssists((prev) => ({ ...prev, [playerId]: Math.max(0, assists) }));
+  };
+
+  const addMercenary = () => {
+    if (mercenaries.length >= 10) return;
+    const num = mercenaries.length + 1;
+    setMercenaries((prev) => [...prev, { id: `merc_${Date.now()}`, name: `용병${num}` }]);
+  };
+
+  const removeMercenary = (id: string) => {
+    setMercenaries((prev) => prev.filter((m) => m.id !== id));
+    const current = form.getValues("participants");
+    form.setValue("participants", current.filter((pid) => pid !== id));
+    setPlayerGoals((prev) => { const u = { ...prev }; delete u[id]; return u; });
+    setPlayerAssists((prev) => { const u = { ...prev }; delete u[id]; return u; });
+  };
+
+  const updateMercenaryName = (id: string, name: string) => {
+    setMercenaries((prev) => prev.map((m) => (m.id === id ? { ...m, name } : m)));
+  };
+
+  const toggleMercParticipant = (id: string, checked: boolean) => {
+    const current = form.getValues("participants");
+    if (checked) {
+      form.setValue("participants", [...current, id]);
+    } else {
+      form.setValue("participants", current.filter((pid) => pid !== id));
+      setPlayerGoals((prev) => { const u = { ...prev }; delete u[id]; return u; });
+      setPlayerAssists((prev) => { const u = { ...prev }; delete u[id]; return u; });
+    }
   };
 
   const selectedParticipants = form.watch("participants") || [];
@@ -205,6 +242,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           )}
         />
 
+        {/* 출전 선수 */}
         <FormField
           control={form.control}
           name="participants"
@@ -248,16 +286,64 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           )}
         />
 
+        {/* 용병 */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <FormLabel>용병</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addMercenary}
+              disabled={mercenaries.length >= 10}
+              className="flex items-center gap-1.5 text-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              용병 추가 ({mercenaries.length}/10)
+            </Button>
+          </div>
+
+          {mercenaries.length > 0 && (
+            <div className="space-y-2 p-4 border border-input rounded-lg bg-muted/30">
+              {mercenaries.map((merc) => (
+                <div key={merc.id} className="flex items-center gap-3">
+                  <Checkbox
+                    checked={selectedParticipants.includes(merc.id)}
+                    onCheckedChange={(checked) => toggleMercParticipant(merc.id, !!checked)}
+                  />
+                  <Input
+                    value={merc.name}
+                    onChange={(e) => updateMercenaryName(merc.id, e.target.value)}
+                    className="h-8 flex-1 max-w-44 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeMercenary(merc.id)}
+                    className="text-muted-foreground hover:text-destructive h-8 w-8 p-0 shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 득점 및 어시스트 */}
         {selectedParticipants.length > 0 && (
           <div>
             <FormLabel>득점 및 어시스트 기록</FormLabel>
             <div className="space-y-3 p-4 border border-input rounded-lg bg-muted/30 mt-2">
               {selectedParticipants.map((playerId) => {
                 const player = players.find((p) => p.id === playerId);
-                if (!player) return null;
+                const merc = mercenaries.find((m) => m.id === playerId);
+                const name = player?.name ?? merc?.name;
+                if (!name) return null;
                 return (
                   <div key={playerId} className="flex items-center space-x-3 pb-3 border-b border-input last:border-b-0">
-                    <label className="text-sm font-medium min-w-32">{player.name}</label>
+                    <label className="text-sm font-medium min-w-32 truncate">{name}</label>
                     <div className="flex items-center space-x-2 flex-1">
                       <div className="flex items-center space-x-1">
                         <Label className="text-xs text-muted-foreground">득점</Label>

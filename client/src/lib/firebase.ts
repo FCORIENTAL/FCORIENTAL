@@ -73,6 +73,7 @@ export interface FirebaseMatch {
   season: string;
   participants: string[];
   goals: { playerId: string; count: number; assists: number }[];
+  mercenaries?: { id: string; name: string }[];
 }
 
 export async function getMatches(): Promise<FirebaseMatch[]> {
@@ -104,27 +105,36 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
   const [matches, players] = await Promise.all([getMatches(), getPlayers()]);
   const playerMap = new Map(players.map((p) => [p.id, p]));
 
-  return matches.map((m) => ({
-    id: m.id,
-    date: m.date,
-    opponent: m.opponent,
-    ourScore: m.ourScore,
-    theirScore: m.theirScore,
-    notes: m.notes ?? null,
-    season: m.season,
-    result: calcResult(m.ourScore, m.theirScore),
-    participants: m.participants
-      .map((pid) => playerMap.get(pid))
-      .filter(Boolean) as Player[],
-    goalDetails: m.goals
-      .filter((g) => g.count > 0 || g.assists > 0)
-      .map((g) => ({
-        playerId: g.playerId,
-        playerName: playerMap.get(g.playerId)?.name ?? "알 수 없음",
-        goals: g.count,
-        assists: g.assists,
-      })),
-  }));
+  return matches.map((m) => {
+    const mercMap = new Map((m.mercenaries ?? []).map((merc) => [merc.id, merc.name]));
+    return {
+      id: m.id,
+      date: m.date,
+      opponent: m.opponent,
+      ourScore: m.ourScore,
+      theirScore: m.theirScore,
+      notes: m.notes ?? null,
+      season: m.season,
+      result: calcResult(m.ourScore, m.theirScore),
+      participants: m.participants
+        .map((pid) => {
+          const regular = playerMap.get(pid);
+          if (regular) return regular;
+          const mercName = mercMap.get(pid);
+          if (mercName) return { id: pid, name: mercName, position: null, number: null, joinDate: "" } as Player;
+          return null;
+        })
+        .filter(Boolean) as Player[],
+      goalDetails: m.goals
+        .filter((g) => g.count > 0 || g.assists > 0)
+        .map((g) => ({
+          playerId: g.playerId,
+          playerName: playerMap.get(g.playerId)?.name ?? mercMap.get(g.playerId) ?? "알 수 없음",
+          goals: g.count,
+          assists: g.assists,
+        })),
+    };
+  });
 }
 
 export async function getPlayerStats(season?: string): Promise<PlayerStats[]> {
