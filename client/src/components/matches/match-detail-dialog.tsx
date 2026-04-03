@@ -63,7 +63,7 @@ export default function MatchDetailDialog({ match, onClose }: MatchDetailDialogP
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {match.participants.map((player) => (
+              {[...match.participants].sort((a, b) => a.name.localeCompare(b.name, "ko")).map((player) => (
                 <span
                   key={player.id}
                   className="bg-muted text-muted-foreground text-xs px-2.5 py-1 rounded-full"
