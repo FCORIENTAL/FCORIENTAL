@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { YearProvider } from "@/contexts/YearContext";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Players from "@/pages/players";
@@ -87,12 +88,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Router hook={useHashLocation}>
-            <AppContent />
-          </Router>
-          <Toaster />
-        </TooltipProvider>
+        <YearProvider>
+          <TooltipProvider>
+            <Router hook={useHashLocation}>
+              <AppContent />
+            </Router>
+            <Toaster />
+          </TooltipProvider>
+        </YearProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
