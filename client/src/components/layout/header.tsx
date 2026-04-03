@@ -73,14 +73,14 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         {isAdminUser ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
+              <Button
                 data-testid="button-user-menu"
-                variant="ghost" 
-                size="sm" 
+                variant="ghost"
+                size="sm"
                 className="flex items-center space-x-2"
               >
                 <User className="w-4 h-4" />
-                <span data-testid="text-username">{user.email}</span>
+                <span data-testid="text-username" className="hidden sm:inline">{user.email}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

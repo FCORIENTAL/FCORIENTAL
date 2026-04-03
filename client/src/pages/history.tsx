@@ -98,11 +98,11 @@ export default function History() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-xl font-semibold text-foreground">경기 이력</h2>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Select value={seasonFilter} onValueChange={setSeason}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-28 sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -115,7 +115,7 @@ export default function History() {
             placeholder="상대팀 검색..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-48"
+            className="flex-1 sm:w-48"
           />
         </div>
       </div>

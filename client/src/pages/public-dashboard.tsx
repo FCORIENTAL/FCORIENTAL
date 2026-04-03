@@ -116,18 +116,18 @@ export default function PublicDashboard() {
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
-                <th className="text-left py-3 px-6 font-medium text-muted-foreground">순위</th>
-                <th className="text-left py-3 px-6 font-medium text-muted-foreground">선수명</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">출전</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">득점</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">경기당 득점</th>
+                <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">순위</th>
+                <th className="text-left py-3 px-3 sm:px-6 font-medium text-muted-foreground">선수명</th>
+                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground">출전</th>
+                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground">득점</th>
+                <th className="text-center py-3 px-3 sm:px-6 font-medium text-muted-foreground hidden sm:table-cell">경기당 득점</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {playerStats && playerStats.length > 0 ? (
                 playerStats.map((player, index) => (
                   <tr key={player.id} className="hover:bg-muted/50">
-                    <td className="py-4 px-6">
+                    <td className="py-3 px-3 sm:py-4 sm:px-6">
                       <span
                         data-testid={`text-rank-${index + 1}`}
                         className={`text-xs font-bold px-2 py-1 rounded-full ${
@@ -140,9 +140,9 @@ export default function PublicDashboard() {
                         {index + 1}
                       </span>
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    <td className="py-3 px-3 sm:py-4 sm:px-6">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
                           index === 0 ? "bg-primary text-primary-foreground" :
                           index === 1 ? "bg-secondary text-secondary-foreground" :
                           index === 2 ? "bg-accent text-accent-foreground" :
@@ -150,20 +150,20 @@ export default function PublicDashboard() {
                         }`}>
                           {player.name.charAt(0)}
                         </div>
-                        <span data-testid={`text-player-name-${player.id}`} className="font-medium text-foreground">
+                        <span data-testid={`text-player-name-${player.id}`} className="font-medium text-foreground text-sm sm:text-base">
                           {player.name}
                         </span>
                       </div>
                     </td>
-                    <td data-testid={`text-appearances-${player.id}`} className="py-4 px-6 text-center text-muted-foreground">
+                    <td data-testid={`text-appearances-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm">
                       {player.appearances}
                     </td>
-                    <td className="py-4 px-6 text-center">
-                      <span data-testid={`text-goals-${player.id}`} className="font-bold text-primary text-lg">
+                    <td className="py-3 px-3 sm:py-4 sm:px-6 text-center">
+                      <span data-testid={`text-goals-${player.id}`} className="font-bold text-primary text-base sm:text-lg">
                         {player.goals}
                       </span>
                     </td>
-                    <td data-testid={`text-goal-ratio-${player.id}`} className="py-4 px-6 text-center text-muted-foreground">
+                    <td data-testid={`text-goal-ratio-${player.id}`} className="py-3 px-3 sm:py-4 sm:px-6 text-center text-muted-foreground text-sm hidden sm:table-cell">
                       {player.goalRatio}
                     </td>
                   </tr>
