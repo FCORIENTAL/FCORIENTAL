@@ -18,14 +18,14 @@ interface HeaderProps {
 const pageTitles: Record<string, string> = {
   "/": "대시보드",
   "/players": "선수 관리",
-  "/matches": "경기 기록", 
-  "/history": "경기 이력"
+  "/matches": "경기 추가",
+  "/history": "경기 기록"
 };
 
 const publicPageTitles: Record<string, string> = {
   "/": "대시보드",
   "/players": "선수 목록",
-  "/history": "경기 이력"
+  "/history": "경기 기록"
 };
 
 export default function Header({ onMenuToggle }: HeaderProps) {
