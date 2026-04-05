@@ -77,12 +77,14 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         },
   });
 
-  const buildGoals = () =>
-    Object.entries(playerGoals).map(([playerId, count]) => ({
+  const buildGoals = () => {
+    const allIds = new Set([...Object.keys(playerGoals), ...Object.keys(playerAssists)]);
+    return Array.from(allIds).map((playerId) => ({
       playerId,
-      count,
+      count: playerGoals[playerId] || 0,
       assists: playerAssists[playerId] || 0,
     }));
+  };
 
   const saveMatchMutation = useMutation({
     mutationFn: (data: z.infer<typeof matchFormSchema>) => {
