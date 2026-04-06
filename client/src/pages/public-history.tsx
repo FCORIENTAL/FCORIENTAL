@@ -108,16 +108,20 @@ export default function PublicHistory() {
                       ⚽ {match.goalDetails.reduce((s, g) => s + g.goals, 0)}골
                     </span>
                   )}
-                  {match.youtubeUrl && (
+                  {match.youtubeUrl ? (
                     <a
                       href={match.youtubeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center justify-center h-8 w-8 rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                      className="flex items-center justify-center h-7 w-7 rounded-md bg-red-500 hover:bg-red-600 text-white transition-colors shrink-0"
                     >
-                      <Youtube className="w-4 h-4" />
+                      <Youtube className="w-3.5 h-3.5" />
                     </a>
+                  ) : (
+                    <span className="flex items-center justify-center h-7 w-7 rounded-md bg-muted text-muted-foreground/40 shrink-0 cursor-not-allowed">
+                      <Youtube className="w-3.5 h-3.5" />
+                    </span>
                   )}
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>
