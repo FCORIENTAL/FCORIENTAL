@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { X, UserPlus } from "lucide-react";
+import { X, UserPlus, Youtube } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPlayers, addMatch, updateMatch, type FirebaseMatch } from "@/lib/firebase";
 import { insertMatchSchema } from "@shared/schema";
@@ -64,6 +64,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           season: initialMatch.season,
           participants: initialMatch.participants,
           playerGoals: [],
+          youtubeUrl: initialMatch.youtubeUrl ?? "",
         }
       : {
           date: new Date().toISOString().split("T")[0],
@@ -74,6 +75,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           season: String(new Date().getFullYear()),
           participants: [],
           playerGoals: [],
+          youtubeUrl: "",
         },
   });
 
@@ -98,6 +100,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         participants: data.participants,
         goals: buildGoals(),
         mercenaries: mercenaries.length > 0 ? mercenaries : undefined,
+        youtubeUrl: data.youtubeUrl || null,
       };
       if (isEditMode) return updateMatch(initialMatch.id, payload);
       return addMatch(payload);
@@ -376,6 +379,23 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
             </div>
           </div>
         )}
+
+        <FormField
+          control={form.control}
+          name="youtubeUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-1.5">
+                <Youtube className="w-4 h-4 text-red-500" />
+                YouTube 링크
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="https://youtube.com/watch?v=..." {...field} value={field.value || ""} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

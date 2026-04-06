@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Youtube } from "lucide-react";
 import { getMatchesWithDetails } from "@/lib/firebase";
 import MatchDetailDialog from "@/components/matches/match-detail-dialog";
 import type { MatchWithDetails } from "@shared/schema";
@@ -102,11 +102,22 @@ export default function PublicHistory() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   {match.goalDetails.length > 0 && (
-                    <span className="text-xs text-primary font-medium hidden sm:block">
+                    <span className="text-xs text-primary font-medium hidden sm:block mr-1">
                       ⚽ {match.goalDetails.reduce((s, g) => s + g.goals, 0)}골
                     </span>
+                  )}
+                  {match.youtubeUrl && (
+                    <a
+                      href={match.youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center justify-center h-8 w-8 rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <Youtube className="w-4 h-4" />
+                    </a>
                   )}
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>

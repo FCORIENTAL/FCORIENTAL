@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Pencil, ChevronRight } from "lucide-react";
+import { Trash2, Pencil, ChevronRight, Youtube } from "lucide-react";
 import { getMatchesWithDetails, getMatches, deleteMatch, type FirebaseMatch } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import MatchForm from "@/components/matches/match-form";
@@ -145,6 +145,17 @@ export default function History() {
                     <span className="text-xs text-primary font-medium hidden sm:block mr-1">
                       ⚽ {match.goalDetails.reduce((s, g) => s + g.goals, 0)}골
                     </span>
+                  )}
+                  {match.youtubeUrl && (
+                    <a
+                      href={match.youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center justify-center h-8 w-8 rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <Youtube className="w-4 h-4" />
+                    </a>
                   )}
                   <Button
                     variant="ghost"
