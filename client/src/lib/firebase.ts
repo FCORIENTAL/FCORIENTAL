@@ -74,6 +74,7 @@ export interface FirebaseMatch {
   participants: string[];
   goals: { playerId: string; count: number; assists: number }[];
   mercenaries?: { id: string; name: string }[];
+  youtubeUrl?: string | null;
 }
 
 export async function getMatches(): Promise<FirebaseMatch[]> {
@@ -116,6 +117,7 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
       notes: m.notes ?? null,
       season: m.season,
       result: calcResult(m.ourScore, m.theirScore),
+      youtubeUrl: m.youtubeUrl ?? null,
       participants: m.participants
         .map((pid) => {
           const regular = playerMap.get(pid);

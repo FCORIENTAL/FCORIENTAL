@@ -90,6 +90,7 @@ export interface MatchWithDetails extends Match {
     assists: number;
   }>;
   result: 'win' | 'loss' | 'draw';
+  youtubeUrl?: string | null;
 }
 
 export const users = pgTable("users", {
