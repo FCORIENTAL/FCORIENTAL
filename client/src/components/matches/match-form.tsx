@@ -18,6 +18,7 @@ import { useState } from "react";
 const matchFormSchema = insertMatchSchema.extend({
   ourScore: z.coerce.number().min(0),
   theirScore: z.coerce.number().min(0),
+  youtubeUrl: z.string().optional(),
 });
 
 interface Mercenary {
