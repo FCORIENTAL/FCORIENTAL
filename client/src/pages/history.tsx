@@ -17,6 +17,7 @@ const currentYear = String(new Date().getFullYear());
 export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
   const [seasonFilter, setSeason] = useState("all");
+  const [badMannersOnly, setBadMannersOnly] = useState(false);
   const [editingMatch, setEditingMatch] = useState<FirebaseMatch | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<MatchWithDetails | null>(null);
   const { toast } = useToast();
@@ -62,7 +63,8 @@ export default function History() {
   const filteredMatches = matches.filter((match) => {
     const matchesSearch = match.opponent.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeason = seasonFilter === "all" || match.season === seasonFilter;
-    return matchesSearch && matchesSeason;
+    const matchesBadManners = !badMannersOnly || !!match.badManners;
+    return matchesSearch && matchesSeason && matchesBadManners;
   });
 
   const getResultBadge = (result: string) => {
@@ -110,6 +112,16 @@ export default function History() {
               <SelectItem value={currentYear}>{currentYear} 시즌</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setBadMannersOnly((v) => !v)}
+            className={`flex items-center gap-1.5 h-9 px-3 shrink-0 ${badMannersOnly ? "border-red-600 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" : ""}`}
+            title="비매너 팀 필터"
+          >
+            <div className={`h-4 w-3 rounded-sm shrink-0 ${badMannersOnly ? "bg-red-600" : "bg-muted-foreground/40"}`} />
+          </Button>
           <Input
             type="text"
             placeholder="상대팀 검색..."
