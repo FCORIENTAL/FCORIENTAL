@@ -9,6 +9,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  deleteField,
 } from "firebase/firestore";
 import {
   getAuth,
@@ -94,7 +95,12 @@ export async function deleteMatch(id: string) {
 }
 
 export async function updateMatch(id: string, data: Omit<FirebaseMatch, "id">) {
-  await updateDoc(doc(db, "matches", id), data as Record<string, unknown>);
+  const update: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined) continue;
+    update[key] = value ?? deleteField();
+  }
+  await updateDoc(doc(db, "matches", id), update);
 }
 
 function calcResult(ourScore: number, theirScore: number): "win" | "loss" | "draw" {
