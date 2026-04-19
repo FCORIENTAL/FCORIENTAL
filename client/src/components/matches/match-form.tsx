@@ -129,10 +129,11 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
       }
       onSuccess?.();
     },
-    onError: () => {
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : "경기 처리 중 오류가 발생했습니다.";
       toast({
         title: isEditMode ? "수정 실패" : "기록 실패",
-        description: "경기 처리 중 오류가 발생했습니다.",
+        description: message,
         variant: "destructive",
       });
     },
