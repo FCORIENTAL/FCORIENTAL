@@ -19,6 +19,7 @@ const matchFormSchema = insertMatchSchema.extend({
   ourScore: z.coerce.number().min(0),
   theirScore: z.coerce.number().min(0),
   youtubeUrl: z.string().optional(),
+  badManners: z.boolean().optional(),
 });
 
 interface Mercenary {
@@ -66,6 +67,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           participants: initialMatch.participants,
           playerGoals: [],
           youtubeUrl: initialMatch.youtubeUrl ?? "",
+          badManners: initialMatch.badManners ?? false,
         }
       : {
           date: new Date().toISOString().split("T")[0],
@@ -77,6 +79,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           participants: [],
           playerGoals: [],
           youtubeUrl: "",
+          badManners: false,
         },
   });
 
@@ -102,6 +105,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         goals: buildGoals(),
         mercenaries: mercenaries.length > 0 ? mercenaries : undefined,
         youtubeUrl: data.youtubeUrl || null,
+        badManners: data.badManners ?? false,
       };
       if (isEditMode) return updateMatch(initialMatch.id, payload);
       return addMatch(payload);
@@ -244,6 +248,25 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
                 <Input placeholder="예: 2025" {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="badManners"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border border-input rounded-lg bg-muted/30">
+              <FormControl>
+                <Checkbox
+                  checked={!!field.value}
+                  onCheckedChange={(checked) => field.onChange(!!checked)}
+                />
+              </FormControl>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center justify-center h-5 w-4 rounded-sm bg-red-600 shrink-0" />
+                <FormLabel className="text-sm cursor-pointer m-0">비매너 팀</FormLabel>
+              </div>
             </FormItem>
           )}
         />

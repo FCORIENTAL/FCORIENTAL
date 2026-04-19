@@ -91,6 +91,7 @@ export interface MatchWithDetails extends Match {
   }>;
   result: 'win' | 'loss' | 'draw';
   youtubeUrl?: string | null;
+  badManners?: boolean;
 }
 
 export const users = pgTable("users", {
