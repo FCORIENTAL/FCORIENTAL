@@ -148,10 +148,16 @@ export default function History() {
               )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={getResultBadge(match.result)}>{getResultText(match.result)}</div>
+                  {match.civilWar ? (
+                    <div className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold shrink-0">내전</div>
+                  ) : (
+                    <div className={getResultBadge(match.result)}>{getResultText(match.result)}</div>
+                  )}
                   <div className="min-w-0">
                     <div className="font-semibold text-foreground truncate">
-                      FC ORIENTAL {match.ourScore} - {match.theirScore} {match.opponent}
+                      {match.civilWar
+                        ? `A팀 ${match.ourScore} - ${match.theirScore} B팀`
+                        : `FC ORIENTAL ${match.ourScore} - ${match.theirScore} ${match.opponent}`}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {match.date} · {match.season} 시즌 · {match.participants.length}명 출전
