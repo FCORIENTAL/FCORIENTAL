@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { X, UserPlus, Youtube } from "lucide-react";
+import { X, UserPlus, Youtube, Swords } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPlayers, addMatch, updateMatch, type FirebaseMatch } from "@/lib/firebase";
 import { insertMatchSchema } from "@shared/schema";
@@ -20,6 +20,7 @@ const matchFormSchema = insertMatchSchema.extend({
   theirScore: z.coerce.number().min(0),
   youtubeUrl: z.string().optional(),
   badManners: z.boolean().optional(),
+  civilWar: z.boolean().optional(),
 });
 
 interface Mercenary {
@@ -45,8 +46,16 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
     if (!initialMatch) return {};
     return Object.fromEntries(initialMatch.goals.map((g) => [g.playerId, g.assists]));
   });
+  const [playerSaves, setPlayerSaves] = useState<Record<string, number>>(() => {
+    if (!initialMatch) return {};
+    return Object.fromEntries(initialMatch.goals.map((g) => [g.playerId, g.saves ?? 0]));
+  });
   const [mercenaries, setMercenaries] = useState<Mercenary[]>(
     () => initialMatch?.mercenaries ?? []
+  );
+  const [civilWar, setCivilWar] = useState(!!initialMatch?.civilWar);
+  const [teamAPlayers, setTeamAPlayers] = useState<Set<string>>(
+    () => new Set(initialMatch?.teamAPlayers ?? [])
   );
 
   const { data: players = [] } = useQuery<Player[]>({
@@ -68,6 +77,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           playerGoals: [],
           youtubeUrl: initialMatch.youtubeUrl ?? "",
           badManners: initialMatch.badManners ?? false,
+          civilWar: initialMatch.civilWar ?? false,
         }
       : {
           date: new Date().toISOString().split("T")[0],
@@ -80,23 +90,30 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           playerGoals: [],
           youtubeUrl: "",
           badManners: false,
+          civilWar: false,
         },
   });
 
   const buildGoals = () => {
-    const allIds = new Set([...Object.keys(playerGoals), ...Object.keys(playerAssists)]);
+    const allIds = new Set([
+      ...Object.keys(playerGoals),
+      ...Object.keys(playerAssists),
+      ...Object.keys(playerSaves),
+    ]);
     return Array.from(allIds).map((playerId) => ({
       playerId,
       count: playerGoals[playerId] || 0,
       assists: playerAssists[playerId] || 0,
+      saves: playerSaves[playerId] || 0,
     }));
   };
 
   const saveMatchMutation = useMutation({
     mutationFn: (data: z.infer<typeof matchFormSchema>) => {
+      const isCivilWar = data.civilWar ?? false;
       const payload = {
         date: data.date,
-        opponent: data.opponent,
+        opponent: isCivilWar ? "내전" : data.opponent,
         ourScore: data.ourScore,
         theirScore: data.theirScore,
         notes: data.notes || null,
@@ -106,6 +123,8 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         mercenaries: mercenaries.length > 0 ? mercenaries : undefined,
         youtubeUrl: data.youtubeUrl || null,
         badManners: data.badManners ?? false,
+        civilWar: isCivilWar,
+        teamAPlayers: isCivilWar ? Array.from(teamAPlayers) : undefined,
       };
       if (isEditMode) return updateMatch(initialMatch.id, payload);
       return addMatch(payload);
@@ -125,7 +144,10 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         form.reset();
         setPlayerGoals({});
         setPlayerAssists({});
+        setPlayerSaves({});
         setMercenaries([]);
+        setCivilWar(false);
+        setTeamAPlayers(new Set());
       }
       onSuccess?.();
     },
@@ -142,9 +164,11 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
   const handleGoalChange = (playerId: string, goals: number) => {
     setPlayerGoals((prev) => ({ ...prev, [playerId]: Math.max(0, goals) }));
   };
-
   const handleAssistChange = (playerId: string, assists: number) => {
     setPlayerAssists((prev) => ({ ...prev, [playerId]: Math.max(0, assists) }));
+  };
+  const handleSaveChange = (playerId: string, saves: number) => {
+    setPlayerSaves((prev) => ({ ...prev, [playerId]: Math.max(0, saves) }));
   };
 
   const addMercenary = () => {
@@ -159,6 +183,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
     form.setValue("participants", current.filter((pid) => pid !== id));
     setPlayerGoals((prev) => { const u = { ...prev }; delete u[id]; return u; });
     setPlayerAssists((prev) => { const u = { ...prev }; delete u[id]; return u; });
+    setPlayerSaves((prev) => { const u = { ...prev }; delete u[id]; return u; });
   };
 
   const updateMercenaryName = (id: string, name: string) => {
@@ -173,14 +198,56 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
       form.setValue("participants", current.filter((pid) => pid !== id));
       setPlayerGoals((prev) => { const u = { ...prev }; delete u[id]; return u; });
       setPlayerAssists((prev) => { const u = { ...prev }; delete u[id]; return u; });
+      setPlayerSaves((prev) => { const u = { ...prev }; delete u[id]; return u; });
+    }
+  };
+
+  const toggleTeamA = (playerId: string) => {
+    setTeamAPlayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(playerId)) next.delete(playerId);
+      else next.add(playerId);
+      return next;
+    });
+  };
+
+  const handleCivilWarToggle = (checked: boolean) => {
+    setCivilWar(checked);
+    form.setValue("civilWar", checked);
+    if (checked) {
+      form.setValue("badManners", false);
+      form.setValue("opponent", "내전");
+    } else {
+      form.setValue("opponent", "");
+      setTeamAPlayers(new Set());
     }
   };
 
   const selectedParticipants = form.watch("participants") || [];
 
+  const getPlayerName = (playerId: string) => {
+    const player = players.find((p) => p.id === playerId);
+    const merc = mercenaries.find((m) => m.id === playerId);
+    return player?.name ?? merc?.name ?? "";
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => saveMatchMutation.mutate(data))} className="space-y-6">
+
+        {/* 내전 토글 */}
+        <div className="flex items-center gap-3 p-3 border border-input rounded-lg bg-muted/30">
+          <Checkbox
+            checked={civilWar}
+            onCheckedChange={(checked) => handleCivilWarToggle(!!checked)}
+          />
+          <div className="flex items-center gap-2">
+            <Swords className="w-4 h-4 text-orange-500" />
+            <span className="text-sm font-medium">내전 (자체전)</span>
+            <span className="text-xs text-muted-foreground">— A팀 vs B팀으로 기록</span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -196,26 +263,28 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="opponent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>상대팀</FormLabel>
-                <FormControl>
-                  <Input placeholder="상대팀명" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!civilWar && (
+            <FormField
+              control={form.control}
+              name="opponent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>상대팀</FormLabel>
+                  <FormControl>
+                    <Input placeholder="상대팀명" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
             name="ourScore"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>우리팀 득점</FormLabel>
+                <FormLabel>{civilWar ? "A팀 점수" : "우리팀 득점"}</FormLabel>
                 <FormControl>
                   <Input type="number" min="0" {...field} />
                 </FormControl>
@@ -229,7 +298,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
             name="theirScore"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>상대팀 득점</FormLabel>
+                <FormLabel>{civilWar ? "B팀 점수" : "상대팀 득점"}</FormLabel>
                 <FormControl>
                   <Input type="number" min="0" {...field} />
                 </FormControl>
@@ -253,24 +322,27 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="badManners"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border border-input rounded-lg bg-muted/30">
-              <FormControl>
-                <Checkbox
-                  checked={!!field.value}
-                  onCheckedChange={(checked) => field.onChange(!!checked)}
-                />
-              </FormControl>
-              <div className="flex items-center gap-2">
-                <div className="inline-flex items-center justify-center h-5 w-4 rounded-sm bg-red-600 shrink-0" />
-                <FormLabel className="text-sm cursor-pointer m-0">비매너 팀</FormLabel>
-              </div>
-            </FormItem>
-          )}
-        />
+        {/* 비매너 체크 (내전에서는 숨김) */}
+        {!civilWar && (
+          <FormField
+            control={form.control}
+            name="badManners"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 border border-input rounded-lg bg-muted/30">
+                <FormControl>
+                  <Checkbox
+                    checked={!!field.value}
+                    onCheckedChange={(checked) => field.onChange(!!checked)}
+                  />
+                </FormControl>
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex items-center justify-center h-5 w-4 rounded-sm bg-red-600 shrink-0" />
+                  <FormLabel className="text-sm cursor-pointer m-0">비매너 팀</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* 출전 선수 */}
         <FormField
@@ -278,7 +350,9 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           name="participants"
           render={() => (
             <FormItem>
-              <FormLabel>출전 선수</FormLabel>
+              <FormLabel>
+                출전 선수{civilWar && <span className="ml-2 text-xs text-muted-foreground font-normal">— 체크 후 A/B팀 지정</span>}
+              </FormLabel>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border border-input rounded-lg bg-muted/30">
                 {players.map((player) => (
                   <FormField
@@ -288,7 +362,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
                     render={({ field }) => (
                       <FormItem
                         key={player.id}
-                        className="flex flex-row items-center space-x-3 space-y-0 p-2 hover:bg-background rounded cursor-pointer"
+                        className="flex flex-row items-center space-x-2 space-y-0 p-2 hover:bg-background rounded cursor-pointer"
                       >
                         <FormControl>
                           <Checkbox
@@ -301,11 +375,26 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
                                 field.onChange(currentValue.filter((v) => v !== player.id));
                                 setPlayerGoals((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
                                 setPlayerAssists((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
+                                setPlayerSaves((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
+                                if (civilWar) setTeamAPlayers((prev) => { const s = new Set(prev); s.delete(player.id); return s; });
                               }
                             }}
                           />
                         </FormControl>
-                        <FormLabel className="text-sm cursor-pointer">{player.name}</FormLabel>
+                        <FormLabel className="text-sm cursor-pointer flex-1">{player.name}</FormLabel>
+                        {civilWar && field.value?.includes(player.id) && (
+                          <button
+                            type="button"
+                            onClick={() => toggleTeamA(player.id)}
+                            className={`text-xs px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                              teamAPlayers.has(player.id)
+                                ? "bg-blue-500 text-white"
+                                : "bg-orange-400 text-white"
+                            }`}
+                          >
+                            {teamAPlayers.has(player.id) ? "A" : "B"}
+                          </button>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -346,6 +435,17 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
                     onChange={(e) => updateMercenaryName(merc.id, e.target.value)}
                     className="h-8 flex-1 max-w-44 text-sm"
                   />
+                  {civilWar && selectedParticipants.includes(merc.id) && (
+                    <button
+                      type="button"
+                      onClick={() => toggleTeamA(merc.id)}
+                      className={`text-xs px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                        teamAPlayers.has(merc.id) ? "bg-blue-500 text-white" : "bg-orange-400 text-white"
+                      }`}
+                    >
+                      {teamAPlayers.has(merc.id) ? "A" : "B"}
+                    </button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -361,41 +461,45 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           )}
         </div>
 
-        {/* 득점 및 어시스트 */}
+        {/* 득점 / 어시스트 / 선방 */}
         {selectedParticipants.length > 0 && (
           <div>
-            <FormLabel>득점 및 어시스트 기록</FormLabel>
+            <FormLabel>득점 · 어시스트 · 선방 기록</FormLabel>
             <div className="space-y-3 p-4 border border-input rounded-lg bg-muted/30 mt-2">
               {selectedParticipants.map((playerId) => {
-                const player = players.find((p) => p.id === playerId);
-                const merc = mercenaries.find((m) => m.id === playerId);
-                const name = player?.name ?? merc?.name;
+                const name = getPlayerName(playerId);
                 if (!name) return null;
+                const teamLabel = civilWar
+                  ? (teamAPlayers.has(playerId) ? "A팀" : "B팀")
+                  : null;
                 return (
-                  <div key={playerId} className="flex items-center space-x-3 pb-3 border-b border-input last:border-b-0">
-                    <label className="text-sm font-medium min-w-32 truncate">{name}</label>
-                    <div className="flex items-center space-x-2 flex-1">
+                  <div key={playerId} className="flex items-center space-x-2 pb-3 border-b border-input last:border-b-0 flex-wrap gap-y-1">
+                    <label className="text-sm font-medium min-w-24 truncate">
+                      {name}
+                      {teamLabel && (
+                        <span className={`ml-1 text-xs px-1 py-0.5 rounded font-bold ${
+                          teamLabel === "A팀" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"
+                        }`}>{teamLabel}</span>
+                      )}
+                    </label>
+                    <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center space-x-1">
                         <Label className="text-xs text-muted-foreground">득점</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="w-16 h-8"
+                        <Input type="number" min="0" placeholder="0" className="w-14 h-8"
                           value={playerGoals[playerId] || 0}
-                          onChange={(e) => handleGoalChange(playerId, parseInt(e.target.value) || 0)}
-                        />
+                          onChange={(e) => handleGoalChange(playerId, parseInt(e.target.value) || 0)} />
                       </div>
                       <div className="flex items-center space-x-1">
                         <Label className="text-xs text-muted-foreground">어시스트</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="w-16 h-8"
+                        <Input type="number" min="0" placeholder="0" className="w-14 h-8"
                           value={playerAssists[playerId] || 0}
-                          onChange={(e) => handleAssistChange(playerId, parseInt(e.target.value) || 0)}
-                        />
+                          onChange={(e) => handleAssistChange(playerId, parseInt(e.target.value) || 0)} />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Label className="text-xs text-muted-foreground">선방</Label>
+                        <Input type="number" min="0" placeholder="0" className="w-14 h-8"
+                          value={playerSaves[playerId] || 0}
+                          onChange={(e) => handleSaveChange(playerId, parseInt(e.target.value) || 0)} />
                       </div>
                     </div>
                   </div>
@@ -450,11 +554,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
             disabled={saveMatchMutation.isPending}
             className="bg-primary text-primary-foreground hover:bg-accent"
           >
-            {saveMatchMutation.isPending
-              ? "저장 중..."
-              : isEditMode
-              ? "수정 저장"
-              : "경기 저장"}
+            {saveMatchMutation.isPending ? "저장 중..." : isEditMode ? "수정 저장" : "경기 저장"}
           </Button>
         </div>
       </form>

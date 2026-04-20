@@ -78,6 +78,7 @@ export interface PlayerStats {
   appearances: number;
   goals: number;
   assists: number;
+  saves: number;
   goalRatio: number;
 }
 
@@ -92,6 +93,8 @@ export interface MatchWithDetails extends Match {
   result: 'win' | 'loss' | 'draw';
   youtubeUrl?: string | null;
   badManners?: boolean;
+  civilWar?: boolean;
+  teamAPlayers?: string[];
 }
 
 export const users = pgTable("users", {

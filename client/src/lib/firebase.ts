@@ -72,10 +72,12 @@ export interface FirebaseMatch {
   notes?: string | null;
   season: string;
   participants: string[];
-  goals: { playerId: string; count: number; assists: number }[];
+  goals: { playerId: string; count: number; assists: number; saves?: number }[];
   mercenaries?: { id: string; name: string }[];
   youtubeUrl?: string | null;
   badManners?: boolean;
+  civilWar?: boolean;
+  teamAPlayers?: string[];
 }
 
 export async function getMatches(): Promise<FirebaseMatch[]> {
@@ -124,6 +126,8 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
       result: calcResult(m.ourScore, m.theirScore),
       youtubeUrl: m.youtubeUrl ?? null,
       badManners: m.badManners ?? false,
+      civilWar: m.civilWar ?? false,
+      teamAPlayers: m.teamAPlayers ?? [],
       participants: m.participants
         .map((pid) => {
           const regular = playerMap.get(pid);
@@ -145,13 +149,14 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
   });
 }
 
-export async function getPlayerStats(season?: string): Promise<PlayerStats[]> {
+export async function getPlayerStats(season?: string, includeCivilWar = false): Promise<PlayerStats[]> {
   const [players, matches] = await Promise.all([getPlayers(), getMatches()]);
 
-  const filteredMatches =
-    season && season !== "all"
-      ? matches.filter((m) => m.season === season)
-      : matches;
+  const filteredMatches = matches.filter((m) => {
+    const seasonMatch = !season || season === "all" || m.season === season;
+    const civilWarOk = !m.civilWar || includeCivilWar;
+    return seasonMatch && civilWarOk;
+  });
 
   return players
     .map((player) => {
@@ -166,6 +171,10 @@ export async function getPlayerStats(season?: string): Promise<PlayerStats[]> {
         const g = m.goals.find((g) => g.playerId === player.id);
         return sum + (g?.assists ?? 0);
       }, 0);
+      const saves = filteredMatches.reduce((sum, m) => {
+        const g = m.goals.find((g) => g.playerId === player.id);
+        return sum + (g?.saves ?? 0);
+      }, 0);
       const goalRatio =
         appearances > 0 ? Math.round((goals / appearances) * 100) / 100 : 0;
 
@@ -177,6 +186,7 @@ export async function getPlayerStats(season?: string): Promise<PlayerStats[]> {
         appearances,
         goals,
         assists,
+        saves,
         goalRatio,
       };
     })
@@ -186,14 +196,19 @@ export async function getPlayerStats(season?: string): Promise<PlayerStats[]> {
 export async function getSeasonStats(season: string) {
   const matches = await getMatches();
   const seasonMatches = season === "all" ? matches : matches.filter((m) => m.season === season);
+  const regularMatches = seasonMatches.filter((m) => !m.civilWar);
 
-  const wins = seasonMatches.filter((m) => m.ourScore > m.theirScore).length;
-  const draws = seasonMatches.filter((m) => m.ourScore === m.theirScore).length;
-  const losses = seasonMatches.filter((m) => m.ourScore < m.theirScore).length;
-  const totalGoals = seasonMatches.reduce((sum, m) => sum + m.ourScore, 0);
-  const totalMatches = seasonMatches.length;
+  const wins = regularMatches.filter((m) => m.ourScore > m.theirScore).length;
+  const draws = regularMatches.filter((m) => m.ourScore === m.theirScore).length;
+  const losses = regularMatches.filter((m) => m.ourScore < m.theirScore).length;
+  const totalGoals = regularMatches.reduce((sum, m) => sum + m.ourScore, 0);
+  const totalConceded = regularMatches.reduce((sum, m) => sum + m.theirScore, 0);
+  const totalAssists = seasonMatches.reduce(
+    (sum, m) => sum + m.goals.reduce((gs, g) => gs + (g.assists ?? 0), 0), 0
+  );
+  const totalMatches = regularMatches.length;
   const averageGoals =
     totalMatches > 0 ? Math.round((totalGoals / totalMatches) * 10) / 10 : 0;
 
-  return { totalMatches, wins, draws, losses, totalGoals, averageGoals };
+  return { totalMatches, wins, draws, losses, totalGoals, totalConceded, totalAssists, averageGoals };
 }
