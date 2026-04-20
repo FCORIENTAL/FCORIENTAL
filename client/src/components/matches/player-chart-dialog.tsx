@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -6,11 +6,12 @@ import {
 import type { PlayerStats, MatchWithDetails } from "@shared/schema";
 
 function getSeasonData(matches: MatchWithDetails[], playerId: string) {
-  const seasons = [...new Set(matches.filter((m) => !m.civilWar).map((m) => m.season))].sort();
+  const playerMatches = matches.filter(
+    (m) => !m.civilWar && m.participants.some((p) => p.id === playerId),
+  );
+  const seasons = [...new Set(playerMatches.map((m) => m.season))].sort();
   return seasons.map((season) => {
-    const played = matches.filter(
-      (m) => !m.civilWar && m.season === season && m.participants.some((p) => p.id === playerId),
-    );
+    const played = playerMatches.filter((m) => m.season === season);
     const goals = played.reduce(
       (s, m) => s + (m.goalDetails.find((g) => g.playerId === playerId)?.goals ?? 0),
       0,
@@ -57,6 +58,13 @@ interface Props {
 export default function PlayerChartDialog({ player, matches, availableYears, onClose }: Props) {
   const [tab, setTab] = useState<"season" | "month">("season");
   const [monthYear, setMonthYear] = useState("all");
+
+  useEffect(() => {
+    if (player) {
+      setTab("season");
+      setMonthYear("all");
+    }
+  }, [player?.id]);
 
   const seasonData = player ? getSeasonData(matches, player.id) : [];
   const monthData = player ? getMonthData(matches, player.id, monthYear) : [];
