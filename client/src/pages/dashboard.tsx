@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Trophy, Target, TrendingUp, ChevronUp, ChevronDown, ChevronsUpDown, Shield, Zap } from "lucide-react";
 import { getPlayerStats, getSeasonStats, getMatchesWithDetails } from "@/lib/firebase";
 import { useYear } from "@/contexts/YearContext";
+import PlayerChartDialog from "@/components/matches/player-chart-dialog";
 import type { PlayerStats, MatchWithDetails } from "@shared/schema";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -55,12 +56,13 @@ const CHART_META: Record<NonNullable<ChartType>, { title: string; key: string; c
 };
 
 export default function Dashboard() {
-  const { selectedYear } = useYear();
+  const { selectedYear, availableYears } = useYear();
   const [sortKey, setSortKey] = useState<SortKey>("goals");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [mobileCol, setMobileCol] = useState<SortKey>("appearances");
   const [includeCivilWar, setIncludeCivilWar] = useState(false);
   const [activeChart, setActiveChart] = useState<ChartType>(null);
+  const [selectedPlayerForChart, setSelectedPlayerForChart] = useState<PlayerStats | null>(null);
 
   const { data: playerStats, isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
     queryKey: ["playerStats", selectedYear, includeCivilWar],
@@ -208,7 +210,7 @@ export default function Dashboard() {
             </thead>
             <tbody className="divide-y divide-border">
               {sortedStats.length > 0 ? sortedStats.map((player, index) => (
-                <tr key={player.id} className="hover:bg-muted/50">
+                <tr key={player.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedPlayerForChart(player)}>
                   <td className="py-3 px-3 sm:py-4 sm:px-6">
                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                       index === 0 ? "bg-yellow-100 text-yellow-800" :
@@ -238,6 +240,13 @@ export default function Dashboard() {
           </table>
         </div>
       </Card>
+
+      <PlayerChartDialog
+        player={selectedPlayerForChart}
+        matches={allMatches}
+        availableYears={availableYears}
+        onClose={() => setSelectedPlayerForChart(null)}
+      />
 
       {/* 차트 다이얼로그 */}
       <Dialog open={!!activeChart} onOpenChange={(open) => { if (!open) setActiveChart(null); }}>
