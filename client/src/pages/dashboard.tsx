@@ -188,7 +188,7 @@ export default function Dashboard() {
 
         <div className="flex sm:hidden gap-2 px-4 py-3 border-b border-border overflow-x-auto">
           {MOBILE_TABS.map(({ key, label }) => (
-            <button key={key} onClick={() => setMobileCol(key)}
+            <button key={key} onClick={() => { setMobileCol(key); setSortKey(key); setSortDir("desc"); }}
               className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 mobileCol === key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
