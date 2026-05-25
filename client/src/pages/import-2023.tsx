@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getPlayers, addPlayer, addMatch } from "@/lib/firebase";
+import { getPlayers, addPlayer, addMatch, getMatches } from "@/lib/firebase";
 import type { Player } from "@shared/schema";
 
 const PLAYERS_2023: { name: string; number: number | null }[] = [
@@ -324,6 +324,24 @@ export default function Import2023() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+
+  async function downloadBackup() {
+    setBackingUp(true);
+    try {
+      const [players, matches] = await Promise.all([getPlayers(), getMatches()]);
+      const backup = { exportedAt: new Date().toISOString(), players, matches };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `fcoriental-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBackingUp(false);
+    }
+  }
 
   function log(type: LogEntry["type"], message: string) {
     setLogs((prev) => [...prev, { type, message }]);
@@ -408,6 +426,20 @@ export default function Import2023() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-foreground">2023 데이터 가져오기 (임시)</h2>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">데이터 백업</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            입력 전에 현재 Firebase 데이터를 JSON 파일로 백업합니다.
+          </p>
+          <Button variant="outline" onClick={downloadBackup} disabled={backingUp}>
+            {backingUp ? "백업 중..." : "백업 다운로드"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
