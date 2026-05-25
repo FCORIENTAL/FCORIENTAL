@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import Players from "@/pages/players";
 import Matches from "@/pages/matches";
 import History from "@/pages/history";
+import Import2023 from "@/pages/import-2023";
 import PublicDashboard from "@/pages/public-dashboard";
 import PublicPlayers from "@/pages/public-players";
 import PublicHistory from "@/pages/public-history";
@@ -27,6 +28,7 @@ function AdminRouter() {
       <Route path="/players" component={Players} />
       <Route path="/matches" component={Matches} />
       <Route path="/history" component={History} />
+      <Route path="/import-2023" component={Import2023} />
       <Route component={NotFound} />
     </Switch>
   );

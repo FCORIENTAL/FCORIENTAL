@@ -7,16 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Pencil, ChevronRight, Youtube } from "lucide-react";
 import { getMatchesWithDetails, getMatches, deleteMatch, type FirebaseMatch } from "@/lib/firebase";
+import { useYear } from "@/contexts/YearContext";
 import { useToast } from "@/hooks/use-toast";
 import MatchForm from "@/components/matches/match-form";
 import MatchDetailDialog from "@/components/matches/match-detail-dialog";
 import type { MatchWithDetails } from "@shared/schema";
 
-const currentYear = String(new Date().getFullYear());
-
 export default function History() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [seasonFilter, setSeason] = useState("all");
+  const { selectedYear: seasonFilter, setSelectedYear: setSeason, availableYears } = useYear();
   const [badMannersOnly, setBadMannersOnly] = useState(false);
   const [editingMatch, setEditingMatch] = useState<FirebaseMatch | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<MatchWithDetails | null>(null);
@@ -105,11 +104,16 @@ export default function History() {
         <div className="flex items-center gap-2">
           <Select value={seasonFilter} onValueChange={setSeason}>
             <SelectTrigger className="w-28 sm:w-32">
-              <SelectValue />
+              <SelectValue>
+                {seasonFilter === "all" ? "전체 시즌" : `${seasonFilter} 시즌`}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">전체 시즌</SelectItem>
-              <SelectItem value={currentYear}>{currentYear} 시즌</SelectItem>
+              {availableYears.map((year) => (
+                <SelectItem key={year} value={year}>
+                  {year === "all" ? "전체 시즌" : `${year} 시즌`}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button

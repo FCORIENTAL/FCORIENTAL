@@ -1,4 +1,6 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMatches } from "@/lib/firebase";
 
 const currentYear = String(new Date().getFullYear());
 
@@ -9,24 +11,25 @@ interface YearContextType {
 }
 
 const YearContext = createContext<YearContextType>({
-  selectedYear: currentYear,
+  selectedYear: "all",
   setSelectedYear: () => {},
-  availableYears: [currentYear],
+  availableYears: ["all"],
 });
 
-function generateYears(): string[] {
-  const startYear = 2024;
-  const end = new Date().getFullYear();
-  const years: string[] = [];
-  for (let y = end; y >= startYear; y--) {
-    years.push(String(y));
-  }
-  return years;
-}
-
 export function YearProvider({ children }: { children: React.ReactNode }) {
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const availableYears = generateYears();
+  const [selectedYear, setSelectedYear] = useState("all");
+
+  const { data: matches = [] } = useQuery({
+    queryKey: ["matches"],
+    queryFn: getMatches,
+  });
+
+  const availableYears = useMemo(() => {
+    const seasons = [...new Set(matches.map((m) => m.season))].sort((a, b) =>
+      b.localeCompare(a)
+    );
+    return ["all", ...seasons];
+  }, [matches]);
 
   return (
     <YearContext.Provider value={{ selectedYear, setSelectedYear, availableYears }}>

@@ -91,7 +91,9 @@ export default function PublicSidebar({ isOpen, onClose }: PublicSidebarProps) {
         <div className="bg-sidebar-accent/20 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-1">
             <Trophy className="w-4 h-4 text-sidebar-foreground" />
-            <h4 className="font-medium text-sm text-sidebar-foreground">{selectedYear} 시즌</h4>
+            <h4 className="font-medium text-sm text-sidebar-foreground">
+            {selectedYear === "all" ? "전체 시즌" : `${selectedYear} 시즌`}
+          </h4>
           </div>
           <p className="text-xs text-sidebar-foreground/80" data-testid="text-season-stats">
             시즌 기록을 확인하세요

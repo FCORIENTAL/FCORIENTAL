@@ -59,12 +59,14 @@ export default function Header({ onMenuToggle }: HeaderProps) {
       <div className="flex items-center space-x-3">
         <Select value={selectedYear} onValueChange={setSelectedYear}>
           <SelectTrigger className="h-8 w-28 text-xs">
-            <SelectValue />
+            <SelectValue>
+              {selectedYear === "all" ? "전체 시즌" : `${selectedYear} 시즌`}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {availableYears.map((year) => (
               <SelectItem key={year} value={year} className="text-xs">
-                {year} 시즌
+                {year === "all" ? "전체 시즌" : `${year} 시즌`}
               </SelectItem>
             ))}
           </SelectContent>
