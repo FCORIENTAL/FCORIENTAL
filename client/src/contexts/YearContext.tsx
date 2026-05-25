@@ -11,13 +11,15 @@ interface YearContextType {
 }
 
 const YearContext = createContext<YearContextType>({
-  selectedYear: currentYear,
+  selectedYear: "all",
   setSelectedYear: () => {},
-  availableYears: [currentYear],
+  availableYears: ["all"],
 });
 
 export function YearProvider({ children }: { children: React.ReactNode }) {
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+  // "all"로 시작 — 항상 유효한 초기값
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [initialized, setInitialized] = useState(false);
 
   const { data: matches = [] } = useQuery({
     queryKey: ["matches"],
@@ -31,15 +33,17 @@ export function YearProvider({ children }: { children: React.ReactNode }) {
     return ["all", ...seasons];
   }, [matches]);
 
-  // 데이터 로드 후 현재 연도가 없으면 가장 최근 시즌으로 변경
+  // 첫 데이터 로드 시 현재 연도 또는 가장 최근 시즌으로 전환
   useEffect(() => {
-    if (availableYears.length > 1 && selectedYear !== "all") {
-      const seasons = availableYears.filter((y) => y !== "all");
-      if (!seasons.includes(selectedYear)) {
-        setSelectedYear(seasons[0]);
-      }
+    if (!initialized && matches.length > 0) {
+      const seasons = [...new Set(matches.map((m) => m.season))].sort((a, b) =>
+        b.localeCompare(a)
+      );
+      const target = seasons.includes(currentYear) ? currentYear : seasons[0];
+      if (target) setSelectedYear(target);
+      setInitialized(true);
     }
-  }, [availableYears]);
+  }, [initialized, matches.length]);
 
   return (
     <YearContext.Provider value={{ selectedYear, setSelectedYear, availableYears }}>
