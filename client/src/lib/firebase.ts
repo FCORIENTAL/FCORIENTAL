@@ -87,7 +87,11 @@ export async function getMatches(): Promise<FirebaseMatch[]> {
 }
 
 export async function addMatch(data: Omit<FirebaseMatch, "id">): Promise<FirebaseMatch> {
-  const ref = await addDoc(collection(db, "matches"), data);
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) clean[key] = value;
+  }
+  const ref = await addDoc(collection(db, "matches"), clean);
   return { id: ref.id, ...data };
 }
 
