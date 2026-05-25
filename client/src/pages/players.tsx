@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPlayers, getPlayerStats, deletePlayer } from "@/lib/firebase";
+import { useYear } from "@/contexts/YearContext";
 import PlayerForm from "@/components/players/player-form";
 import type { Player, PlayerStats } from "@shared/schema";
 
@@ -21,10 +22,11 @@ export default function Players() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { selectedYear } = useYear();
 
   const { data: playerStats = [], isLoading: isLoadingStats } = useQuery<PlayerStats[]>({
-    queryKey: ["playerStats"],
-    queryFn: () => getPlayerStats(),
+    queryKey: ["playerStats", selectedYear],
+    queryFn: () => getPlayerStats(selectedYear),
   });
 
   const { data: players = [] } = useQuery<Player[]>({
