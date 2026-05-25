@@ -31,7 +31,7 @@ function attackPoints(player: PlayerStats): number {
 
 function buildChartData(matches: MatchWithDetails[], year: string) {
   return [...matches]
-    .filter((m) => m.season === year && !m.civilWar)
+    .filter((m) => (year === "all" || m.season === year) && !m.civilWar)
     .reverse()
     .map((m, i, arr) => {
       const wins = arr.slice(0, i + 1).filter((x) => x.result === "win").length;
