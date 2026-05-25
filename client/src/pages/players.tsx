@@ -1,19 +1,24 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPlayers, getPlayerStats, deletePlayer } from "@/lib/firebase";
 import PlayerForm from "@/components/players/player-form";
 import type { Player, PlayerStats } from "@shared/schema";
 
+type SortKey = "name" | "goals" | "assists" | "appearances";
+type SortDir = "desc" | "asc";
+
 export default function Players() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("goals");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -39,9 +44,35 @@ export default function Players() {
     },
   });
 
-  const filteredStats = playerStats.filter((stat) =>
-    stat.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    else { setSortKey(key); setSortDir("desc"); }
+  }
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ChevronsUpDown className="w-3 h-3 inline ml-1 opacity-40" />;
+    return sortDir === "desc"
+      ? <ChevronDown className="w-3 h-3 inline ml-1" />
+      : <ChevronUp className="w-3 h-3 inline ml-1" />;
+  }
+
+  const sortedStats = useMemo(() => {
+    const filtered = playerStats.filter((stat) =>
+      stat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    return [...filtered].sort((a, b) => {
+      if (sortKey === "name") {
+        return sortDir === "desc"
+          ? b.name.localeCompare(a.name, "ko")
+          : a.name.localeCompare(b.name, "ko");
+      }
+      return sortDir === "desc" ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey];
+    });
+  }, [playerStats, searchTerm, sortKey, sortDir]);
+
+  function thClass(col: SortKey) {
+    return `text-center py-3 px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground ${sortKey === col ? "text-foreground" : ""}`;
+  }
 
   const handleDeletePlayer = (playerId: string) => {
     if (confirm("정말로 이 선수를 삭제하시겠습니까?")) {
@@ -97,16 +128,27 @@ export default function Players() {
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
-                <th className="text-left py-3 px-6 font-medium text-muted-foreground">선수명</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">득점</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">어시스트</th>
-                <th className="text-center py-3 px-6 font-medium text-muted-foreground">출석횟수</th>
+                <th
+                  className={`text-left py-3 px-6 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground ${sortKey === "name" ? "text-foreground" : ""}`}
+                  onClick={() => handleSort("name")}
+                >
+                  선수명<SortIcon col="name" />
+                </th>
+                <th className={thClass("goals")} onClick={() => handleSort("goals")}>
+                  득점<SortIcon col="goals" />
+                </th>
+                <th className={thClass("assists")} onClick={() => handleSort("assists")}>
+                  어시스트<SortIcon col="assists" />
+                </th>
+                <th className={thClass("appearances")} onClick={() => handleSort("appearances")}>
+                  출석<SortIcon col="appearances" />
+                </th>
                 <th className="text-center py-3 px-6 font-medium text-muted-foreground">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredStats.length > 0 ? (
-                filteredStats.map((stat) => {
+              {sortedStats.length > 0 ? (
+                sortedStats.map((stat) => {
                   const player = players.find((p) => p.id === stat.id);
                   return (
                     <tr key={stat.id} className="hover:bg-muted/50">
