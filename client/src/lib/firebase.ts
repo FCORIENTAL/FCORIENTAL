@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAnalytics, isSupported, logEvent, type Analytics } from "firebase/analytics";
 import {
   getFirestore,
   collection,
@@ -28,11 +29,26 @@ const firebaseConfig = {
   storageBucket: "fcoriental-7a2f3.firebasestorage.app",
   messagingSenderId: "913160977794",
   appId: "1:913160977794:web:d3a73519c05e6eafa5239b",
+  measurementId: "G-XXXXXXXXXX",
 };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+
+let analytics: Analytics | null = null;
+isSupported().then((supported) => {
+  if (supported) analytics = getAnalytics(app);
+});
+
+export function logPageView(path: string) {
+  if (!analytics) return;
+  logEvent(analytics, "page_view", {
+    page_path: path,
+    page_location: window.location.href,
+    page_title: document.title,
+  });
+}
 
 export { onAuthStateChanged, type FirebaseUser };
 

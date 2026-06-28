@@ -1,6 +1,7 @@
-import { Switch, Route, Router } from "wouter";
+import { Switch, Route, Router, useLocation } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import { queryClient } from "./lib/queryClient";
+import { logPageView } from "./lib/firebase";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,7 +20,7 @@ import Login from "@/pages/login";
 import Sidebar from "@/components/layout/sidebar";
 import PublicSidebar from "@/components/layout/public-sidebar";
 import Header from "@/components/layout/header";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function AdminRouter() {
   return (
@@ -49,6 +50,11 @@ function PublicRouter() {
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isLoading, isAdmin } = useAuth();
+  const [location] = useLocation();
+
+  useEffect(() => {
+    logPageView(location);
+  }, [location]);
 
   if (isLoading) {
     return (
