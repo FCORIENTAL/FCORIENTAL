@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAnalytics, isSupported, logEvent, type Analytics } from "firebase/analytics";
 import {
   getFirestore,
@@ -33,6 +34,19 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+const RECAPTCHA_SITE_KEY = "RECAPTCHA_V3_SITE_KEY_PLACEHOLDER";
+if (typeof window !== "undefined" && RECAPTCHA_SITE_KEY !== "RECAPTCHA_V3_SITE_KEY_PLACEHOLDER") {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (err) {
+    console.warn("App Check initialization failed", err);
+  }
+}
+
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
