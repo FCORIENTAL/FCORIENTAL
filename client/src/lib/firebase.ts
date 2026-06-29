@@ -35,8 +35,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-const RECAPTCHA_SITE_KEY = "RECAPTCHA_V3_SITE_KEY_PLACEHOLDER";
-if (typeof window !== "undefined" && RECAPTCHA_SITE_KEY !== "RECAPTCHA_V3_SITE_KEY_PLACEHOLDER") {
+const RECAPTCHA_SITE_KEY = "6LfoHjstAAAAALz--Ui-Co2Z7-9KSKMH6s3hJFg3";
+if (typeof window !== "undefined") {
   try {
     initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
