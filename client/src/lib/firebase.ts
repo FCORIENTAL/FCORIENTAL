@@ -14,7 +14,6 @@ import {
 } from "firebase/firestore";
 import {
   getAuth,
-  signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
@@ -67,10 +66,6 @@ export function logPageView(path: string) {
 }
 
 export { onAuthStateChanged, type FirebaseUser };
-
-export async function fbSignIn(email: string, password: string) {
-  return signInWithEmailAndPassword(auth, email, password);
-}
 
 export async function fbSignInWithGoogle() {
   const provider = new GoogleAuthProvider();
