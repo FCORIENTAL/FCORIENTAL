@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { auth, fbSignIn, fbSignInWithGoogle, fbSignOut, onAuthStateChanged, type FirebaseUser } from "@/lib/firebase";
+import { auth, fbSignInWithGoogle, fbSignOut, onAuthStateChanged, type FirebaseUser } from "@/lib/firebase";
 
 const ADMIN_EMAILS = new Set<string>([
   "redrumsid@gmail.com",
@@ -8,7 +8,6 @@ const ADMIN_EMAILS = new Set<string>([
 interface AuthContextType {
   user: FirebaseUser | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   isAdmin: () => boolean;
@@ -28,10 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const login = async (email: string, password: string) => {
-    await fbSignIn(email, password);
-  };
-
   const loginWithGoogle = async () => {
     await fbSignInWithGoogle();
   };
@@ -46,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, loginWithGoogle, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, isLoading, loginWithGoogle, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
