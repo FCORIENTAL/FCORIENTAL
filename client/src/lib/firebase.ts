@@ -15,6 +15,8 @@ import {
 import {
   getAuth,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User as FirebaseUser,
@@ -68,6 +70,11 @@ export { onAuthStateChanged, type FirebaseUser };
 
 export async function fbSignIn(email: string, password: string) {
   return signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function fbSignInWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  return signInWithPopup(auth, provider);
 }
 
 export async function fbSignOut() {
