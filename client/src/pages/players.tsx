@@ -11,7 +11,7 @@ import { useYear } from "@/contexts/YearContext";
 import PlayerForm from "@/components/players/player-form";
 import type { Player, PlayerStats } from "@shared/schema";
 
-type SortKey = "name" | "goals" | "assists" | "saves" | "appearances";
+type SortKey = "name" | "goals" | "assists" | "saves" | "ownGoals" | "appearances";
 type SortDir = "desc" | "asc";
 
 export default function Players() {
@@ -145,6 +145,9 @@ export default function Players() {
                 <th className={thClass("saves")} onClick={() => handleSort("saves")}>
                   선방<SortIcon col="saves" />
                 </th>
+                <th className={thClass("ownGoals")} onClick={() => handleSort("ownGoals")}>
+                  자책<SortIcon col="ownGoals" />
+                </th>
                 <th className={thClass("appearances")} onClick={() => handleSort("appearances")}>
                   출석<SortIcon col="appearances" />
                 </th>
@@ -183,6 +186,9 @@ export default function Players() {
                       <td data-testid={`text-player-saves-${stat.id}`} className="py-4 px-6 text-center font-bold text-green-600">
                         {stat.saves}
                       </td>
+                      <td data-testid={`text-player-owngoals-${stat.id}`} className="py-4 px-6 text-center font-bold text-red-500">
+                        {stat.ownGoals}
+                      </td>
                       <td data-testid={`text-player-appearances-${stat.id}`} className="py-4 px-6 text-center font-medium text-foreground">
                         {stat.appearances}
                       </td>
@@ -212,7 +218,7 @@ export default function Players() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 px-6 text-center text-muted-foreground">
+                  <td colSpan={7} className="py-8 px-6 text-center text-muted-foreground">
                     {searchTerm ? "검색 결과가 없습니다." : "등록된 선수가 없습니다."}
                   </td>
                 </tr>

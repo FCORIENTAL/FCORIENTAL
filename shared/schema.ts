@@ -79,6 +79,7 @@ export interface PlayerStats {
   goals: number;
   assists: number;
   saves: number;
+  ownGoals: number;
   goalRatio: number;
 }
 
@@ -90,7 +91,9 @@ export interface MatchWithDetails extends Match {
     goals: number;
     assists: number;
     saves: number;
+    ownGoals: number;
   }>;
+  theirOwnGoals?: number;
   result: 'win' | 'loss' | 'draw';
   youtubeUrl?: string | null;
   badManners?: boolean;

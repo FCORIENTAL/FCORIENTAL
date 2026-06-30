@@ -74,12 +74,12 @@ export default function MatchDetailDialog({ match, onClose }: MatchDetailDialogP
             </div>
           </div>
 
-          {/* 득점 / 어시스트 */}
+          {/* 득점 / 어시스트 / 선방 / 자책 */}
           {match.goalDetails.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Target className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">득점 기록</p>
+                <p className="text-sm font-semibold text-foreground">개인 기록</p>
               </div>
               <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
                 {match.goalDetails.map((g) => (
@@ -96,10 +96,28 @@ export default function MatchDetailDialog({ match, onClose }: MatchDetailDialogP
                           <span className="text-blue-500 font-bold text-sm">{g.assists}</span> 어시스트
                         </span>
                       )}
+                      {g.saves > 0 && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-emerald-600 font-bold text-sm">{g.saves}</span> 선방
+                        </span>
+                      )}
+                      {g.ownGoals > 0 && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-red-500 font-bold text-sm">{g.ownGoals}</span> 자책
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* 상대팀 자책골 */}
+          {(match.theirOwnGoals ?? 0) > 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">상대팀 자책골:</span>
+              <span className="text-red-500 font-bold">{match.theirOwnGoals}</span>
             </div>
           )}
 
