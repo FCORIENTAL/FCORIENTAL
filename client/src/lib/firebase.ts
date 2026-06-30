@@ -104,7 +104,8 @@ export interface FirebaseMatch {
   notes?: string | null;
   season: string;
   participants: string[];
-  goals: { playerId: string; count: number; assists: number; saves?: number }[];
+  goals: { playerId: string; count: number; assists: number; saves?: number; ownGoals?: number }[];
+  theirOwnGoals?: number;
   mercenaries?: { id: string; name: string }[];
   youtubeUrl?: string | null;
   badManners?: boolean;
@@ -164,6 +165,7 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
       badManners: m.badManners ?? false,
       civilWar: m.civilWar ?? false,
       teamAPlayers: m.teamAPlayers ?? [],
+      theirOwnGoals: m.theirOwnGoals ?? 0,
       participants: m.participants
         .map((pid) => {
           const regular = playerMap.get(pid);
@@ -174,13 +176,14 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
         })
         .filter(Boolean) as Player[],
       goalDetails: m.goals
-        .filter((g) => g.count > 0 || g.assists > 0 || (g.saves ?? 0) > 0)
+        .filter((g) => g.count > 0 || g.assists > 0 || (g.saves ?? 0) > 0 || (g.ownGoals ?? 0) > 0)
         .map((g) => ({
           playerId: g.playerId,
           playerName: playerMap.get(g.playerId)?.name ?? mercMap.get(g.playerId) ?? "알 수 없음",
           goals: g.count,
           assists: g.assists,
           saves: g.saves ?? 0,
+          ownGoals: g.ownGoals ?? 0,
         })),
     };
   });
@@ -212,6 +215,10 @@ export async function getPlayerStats(season?: string, includeCivilWar = false): 
         const g = m.goals.find((g) => g.playerId === player.id);
         return sum + (g?.saves ?? 0);
       }, 0);
+      const ownGoals = filteredMatches.reduce((sum, m) => {
+        const g = m.goals.find((g) => g.playerId === player.id);
+        return sum + (g?.ownGoals ?? 0);
+      }, 0);
       const goalRatio =
         appearances > 0 ? Math.round((goals / appearances) * 100) / 100 : 0;
 
@@ -224,6 +231,7 @@ export async function getPlayerStats(season?: string, includeCivilWar = false): 
         goals,
         assists,
         saves,
+        ownGoals,
         goalRatio,
       };
     })

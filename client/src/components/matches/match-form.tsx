@@ -18,6 +18,7 @@ import { useState } from "react";
 const matchFormSchema = insertMatchSchema.extend({
   ourScore: z.coerce.number().min(0),
   theirScore: z.coerce.number().min(0),
+  theirOwnGoals: z.coerce.number().min(0).optional(),
   youtubeUrl: z.string().optional(),
   badManners: z.boolean().optional(),
   civilWar: z.boolean().optional(),
@@ -50,6 +51,10 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
     if (!initialMatch) return {};
     return Object.fromEntries(initialMatch.goals.map((g) => [g.playerId, g.saves ?? 0]));
   });
+  const [playerOwnGoals, setPlayerOwnGoals] = useState<Record<string, number>>(() => {
+    if (!initialMatch) return {};
+    return Object.fromEntries(initialMatch.goals.map((g) => [g.playerId, g.ownGoals ?? 0]));
+  });
   const [mercenaries, setMercenaries] = useState<Mercenary[]>(
     () => initialMatch?.mercenaries ?? []
   );
@@ -71,6 +76,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           opponent: initialMatch.opponent,
           ourScore: initialMatch.ourScore,
           theirScore: initialMatch.theirScore,
+          theirOwnGoals: initialMatch.theirOwnGoals ?? 0,
           notes: initialMatch.notes ?? "",
           season: initialMatch.season,
           participants: initialMatch.participants,
@@ -84,6 +90,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           opponent: "",
           ourScore: 0,
           theirScore: 0,
+          theirOwnGoals: 0,
           notes: "",
           season: String(new Date().getFullYear()),
           participants: [],
@@ -99,12 +106,14 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
       ...Object.keys(playerGoals),
       ...Object.keys(playerAssists),
       ...Object.keys(playerSaves),
+      ...Object.keys(playerOwnGoals),
     ]);
     return Array.from(allIds).map((playerId) => ({
       playerId,
       count: playerGoals[playerId] || 0,
       assists: playerAssists[playerId] || 0,
       saves: playerSaves[playerId] || 0,
+      ownGoals: playerOwnGoals[playerId] || 0,
     }));
   };
 
@@ -116,6 +125,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         opponent: isCivilWar ? "내전" : data.opponent,
         ourScore: data.ourScore,
         theirScore: data.theirScore,
+        theirOwnGoals: data.theirOwnGoals ?? 0,
         notes: data.notes || null,
         season: data.season,
         participants: data.participants,
@@ -145,6 +155,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
         setPlayerGoals({});
         setPlayerAssists({});
         setPlayerSaves({});
+        setPlayerOwnGoals({});
         setMercenaries([]);
         setCivilWar(false);
         setTeamAPlayers(new Set());
@@ -170,6 +181,9 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
   const handleSaveChange = (playerId: string, saves: number) => {
     setPlayerSaves((prev) => ({ ...prev, [playerId]: Math.max(0, saves) }));
   };
+  const handleOwnGoalChange = (playerId: string, ownGoals: number) => {
+    setPlayerOwnGoals((prev) => ({ ...prev, [playerId]: Math.max(0, ownGoals) }));
+  };
 
   const addMercenary = () => {
     if (mercenaries.length >= 10) return;
@@ -184,6 +198,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
     setPlayerGoals((prev) => { const u = { ...prev }; delete u[id]; return u; });
     setPlayerAssists((prev) => { const u = { ...prev }; delete u[id]; return u; });
     setPlayerSaves((prev) => { const u = { ...prev }; delete u[id]; return u; });
+    setPlayerOwnGoals((prev) => { const u = { ...prev }; delete u[id]; return u; });
   };
 
   const updateMercenaryName = (id: string, name: string) => {
@@ -306,6 +321,22 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
               </FormItem>
             )}
           />
+
+          {!civilWar && (
+            <FormField
+              control={form.control}
+              name="theirOwnGoals"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>상대팀 자책골</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="0" {...field} value={field.value ?? 0} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
 
         <FormField
@@ -376,6 +407,7 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
                                 setPlayerGoals((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
                                 setPlayerAssists((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
                                 setPlayerSaves((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
+                                setPlayerOwnGoals((prev) => { const u = { ...prev }; delete u[player.id]; return u; });
                                 if (civilWar) setTeamAPlayers((prev) => { const s = new Set(prev); s.delete(player.id); return s; });
                               }
                             }}
@@ -461,10 +493,10 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
           )}
         </div>
 
-        {/* 득점 / 어시스트 / 선방 */}
+        {/* 득점 / 어시스트 / 선방 / 자책 */}
         {selectedParticipants.length > 0 && (
           <div>
-            <FormLabel>득점 · 어시스트 · 선방 기록</FormLabel>
+            <FormLabel>득점 · 어시스트 · 선방 · 자책 기록</FormLabel>
             <div className="space-y-3 p-4 border border-input rounded-lg bg-muted/30 mt-2">
               {selectedParticipants.map((playerId) => {
                 const name = getPlayerName(playerId);
@@ -500,6 +532,12 @@ export default function MatchForm({ onSuccess, initialMatch }: MatchFormProps) {
                         <Input type="number" min="0" placeholder="0" className="w-14 h-8"
                           value={playerSaves[playerId] || 0}
                           onChange={(e) => handleSaveChange(playerId, parseInt(e.target.value) || 0)} />
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Label className="text-xs text-muted-foreground">자책</Label>
+                        <Input type="number" min="0" placeholder="0" className="w-14 h-8"
+                          value={playerOwnGoals[playerId] || 0}
+                          onChange={(e) => handleOwnGoalChange(playerId, parseInt(e.target.value) || 0)} />
                       </div>
                     </div>
                   </div>
