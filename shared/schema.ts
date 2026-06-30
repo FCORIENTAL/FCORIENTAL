@@ -89,6 +89,7 @@ export interface MatchWithDetails extends Match {
     playerName: string;
     goals: number;
     assists: number;
+    saves: number;
   }>;
   result: 'win' | 'loss' | 'draw';
   youtubeUrl?: string | null;

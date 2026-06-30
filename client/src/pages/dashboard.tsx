@@ -13,14 +13,15 @@ import {
   LineChart, Line, Legend,
 } from "recharts";
 
-type SortKey = "appearances" | "goals" | "assists" | "attackPoints";
+type SortKey = "appearances" | "goals" | "assists" | "saves" | "attackPoints";
 type SortDir = "desc" | "asc";
-type ChartType = "goals" | "winRate" | "avgGoals" | "conceded" | "assists" | null;
+type ChartType = "goals" | "winRate" | "avgGoals" | "conceded" | "assists" | "saves" | null;
 
 const MOBILE_TABS: { key: SortKey; label: string }[] = [
   { key: "appearances", label: "출석" },
   { key: "goals", label: "득점" },
   { key: "assists", label: "어시스트" },
+  { key: "saves", label: "선방" },
   { key: "attackPoints", label: "공격P" },
 ];
 
@@ -36,11 +37,13 @@ function buildChartData(matches: MatchWithDetails[], year: string) {
     .map((m, i, arr) => {
       const wins = arr.slice(0, i + 1).filter((x) => x.result === "win").length;
       const totalAssists = m.goalDetails.reduce((s, g) => s + g.assists, 0);
+      const totalSaves = m.goalDetails.reduce((s, g) => s + g.saves, 0);
       return {
         date: m.date.slice(5),
         득점: m.ourScore,
         실점: m.theirScore,
         어시스트: totalAssists,
+        선방: totalSaves,
         누적승률: Math.round((wins / (i + 1)) * 100),
         평균득점: Math.round((arr.slice(0, i + 1).reduce((s, x) => s + x.ourScore, 0) / (i + 1)) * 10) / 10,
       };
@@ -53,6 +56,7 @@ const CHART_META: Record<NonNullable<ChartType>, { title: string; key: string; c
   avgGoals: { title: "평균 득점 추이", key: "평균득점", color: "#3b82f6", type: "line" },
   conceded: { title: "경기별 실점", key: "실점", color: "#ef4444", type: "bar" },
   assists:  { title: "경기별 어시스트", key: "어시스트", color: "#8b5cf6", type: "bar" },
+  saves:    { title: "경기별 선방", key: "선방", color: "#10b981", type: "bar" },
 };
 
 export default function Dashboard() {
@@ -150,7 +154,7 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       {/* 상단 통계 카드 */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
         <StatCard label="총 경기" value={seasonStats?.totalMatches || 0}
           icon={<Calendar className="w-5 h-5 text-primary" />} iconBg="bg-primary/10" textColor="text-foreground" />
         <StatCard label="승률" value={`${winRate}%`}
@@ -168,6 +172,9 @@ export default function Dashboard() {
         <StatCard label="총 어시스트" value={seasonStats?.totalAssists || 0}
           icon={<Zap className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-100" textColor="text-purple-500"
           chartKey="assists" pcOnly />
+        <StatCard label="총 선방" value={seasonStats?.totalSaves || 0}
+          icon={<Shield className="w-5 h-5 text-emerald-600" />} iconBg="bg-emerald-100" textColor="text-emerald-600"
+          chartKey="saves" pcOnly />
       </div>
 
       {/* 선수 기록 테이블 */}
@@ -205,6 +212,7 @@ export default function Dashboard() {
                 <th className={colClass("appearances")} onClick={() => handleSort("appearances")}>출석<SortIcon col="appearances" /></th>
                 <th className={colClass("goals")} onClick={() => handleSort("goals")}>득점<SortIcon col="goals" /></th>
                 <th className={colClass("assists")} onClick={() => handleSort("assists")}>어시스트<SortIcon col="assists" /></th>
+                <th className={colClass("saves")} onClick={() => handleSort("saves")}>선방<SortIcon col="saves" /></th>
                 <th className={colClass("attackPoints")} onClick={() => handleSort("attackPoints")}>경기당 공격P<SortIcon col="attackPoints" /></th>
               </tr>
             </thead>
@@ -231,10 +239,11 @@ export default function Dashboard() {
                   <td className={cellClass("appearances")}>{player.appearances}</td>
                   <td className={`${cellClass("goals")} !text-primary font-bold text-base sm:text-lg`}>{player.goals}</td>
                   <td className={cellClass("assists")}>{player.assists}</td>
+                  <td className={`${cellClass("saves")} !text-emerald-600 font-semibold`}>{player.saves}</td>
                   <td className={cellClass("attackPoints")}>{attackPoints(player).toFixed(1)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} className="py-8 px-6 text-center text-muted-foreground">아직 등록된 선수가 없습니다.</td></tr>
+                <tr><td colSpan={7} className="py-8 px-6 text-center text-muted-foreground">아직 등록된 선수가 없습니다.</td></tr>
               )}
             </tbody>
           </table>
