@@ -20,7 +20,11 @@ function getSeasonData(matches: MatchWithDetails[], playerId: string) {
       (s, m) => s + (m.goalDetails.find((g) => g.playerId === playerId)?.assists ?? 0),
       0,
     );
-    return { label: season, 출석: played.length, 득점: goals, 어시스트: assists };
+    const saves = played.reduce(
+      (s, m) => s + (m.goalDetails.find((g) => g.playerId === playerId)?.saves ?? 0),
+      0,
+    );
+    return { label: season, 출석: played.length, 득점: goals, 어시스트: assists, 선방: saves };
   });
 }
 
@@ -44,7 +48,11 @@ function getMonthData(matches: MatchWithDetails[], playerId: string, yearFilter:
       (s, m) => s + (m.goalDetails.find((g) => g.playerId === playerId)?.assists ?? 0),
       0,
     );
-    return { label: `${month}월`, 출석: played.length, 득점: goals, 어시스트: assists };
+    const saves = played.reduce(
+      (s, m) => s + (m.goalDetails.find((g) => g.playerId === playerId)?.saves ?? 0),
+      0,
+    );
+    return { label: `${month}월`, 출석: played.length, 득점: goals, 어시스트: assists, 선방: saves };
   });
 }
 
@@ -124,6 +132,7 @@ export default function PlayerChartDialog({ player, matches, availableYears, onC
                 <Bar dataKey="출석" fill="#94a3b8" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="득점" fill="#f59e0b" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="어시스트" fill="#8b5cf6" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="선방" fill="#10b981" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )
@@ -138,6 +147,7 @@ export default function PlayerChartDialog({ player, matches, availableYears, onC
               <Bar dataKey="출석" fill="#94a3b8" radius={[3, 3, 0, 0]} />
               <Bar dataKey="득점" fill="#f59e0b" radius={[3, 3, 0, 0]} />
               <Bar dataKey="어시스트" fill="#8b5cf6" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="선방" fill="#10b981" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

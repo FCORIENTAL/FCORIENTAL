@@ -174,12 +174,13 @@ export async function getMatchesWithDetails(): Promise<MatchWithDetails[]> {
         })
         .filter(Boolean) as Player[],
       goalDetails: m.goals
-        .filter((g) => g.count > 0 || g.assists > 0)
+        .filter((g) => g.count > 0 || g.assists > 0 || (g.saves ?? 0) > 0)
         .map((g) => ({
           playerId: g.playerId,
           playerName: playerMap.get(g.playerId)?.name ?? mercMap.get(g.playerId) ?? "알 수 없음",
           goals: g.count,
           assists: g.assists,
+          saves: g.saves ?? 0,
         })),
     };
   });
@@ -242,9 +243,12 @@ export async function getSeasonStats(season: string) {
   const totalAssists = seasonMatches.reduce(
     (sum, m) => sum + m.goals.reduce((gs, g) => gs + (g.assists ?? 0), 0), 0
   );
+  const totalSaves = seasonMatches.reduce(
+    (sum, m) => sum + m.goals.reduce((gs, g) => gs + (g.saves ?? 0), 0), 0
+  );
   const totalMatches = regularMatches.length;
   const averageGoals =
     totalMatches > 0 ? Math.round((totalGoals / totalMatches) * 10) / 10 : 0;
 
-  return { totalMatches, wins, draws, losses, totalGoals, totalConceded, totalAssists, averageGoals };
+  return { totalMatches, wins, draws, losses, totalGoals, totalConceded, totalAssists, totalSaves, averageGoals };
 }
